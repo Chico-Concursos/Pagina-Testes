@@ -1,0 +1,2816 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chico Concursos - Flashcards com Progresso</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background-color: black;
+      color: #FFD700;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      overflow-x: hidden;
+    }
+      .top-bar {
+      display: flex;
+      justify-content: center;        /* ← CENTRALIZADO */
+      align-items: center;
+      background-color: #111;
+      padding: 0 10px;
+      flex-wrap: nowrap;              /* ← Não quebra linha */
+      overflow-x: auto;               /* ← Rolagem horizontal se necessário */
+      gap: 10px;
+      white-space: nowrap;
+    }
+    .top-bar button,
+    .top-bar select {
+	  min-width: 0;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.2em;
+      cursor: pointer;
+      position: relative;
+    }
+    .top-bar span {
+      font-size: 1.0em;
+      color: white;
+    }
+      #categoryFilter {
+      background-color: #222;
+      border: 1px solid #555;
+      padding: 2px 4px;
+      color: white;
+      font-size: 1.0em;
+      max-width: 180px; /* ← limite de largura para não quebrar linha */
+      width: auto;
+      flex-shrink: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    }
+    .tooltip:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      top: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 5px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      font-size: 0.8em;
+      z-index: 10;
+    }
+    #card-container {
+      position: relative;
+      background-color: white;
+      color: black;
+      width: 98%;
+      height: 75vh;
+      margin: 0px auto;
+      padding: 40px 10px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-y: auto;
+      overflow-x: hidden;
+      white-space: pre-wrap;
+    }
+    #flashcard-content {
+      text-align: center;
+      width: 100%;
+      max-height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      word-wrap: break-word;
+    }
+    .bottom-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0px 0;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .bottom-bar button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.4em;
+      color: white;
+      position: relative;
+    }
+    .bottom-bar button::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-size: 0.75em;
+      white-space: nowrap;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .bottom-bar button.show-tooltip::after {
+      opacity: 1;
+    }
+    .bottom-bar input[type="number"] {
+      width: 55px;
+      padding: 1,5px;
+      font-size: 1em;
+    }
+    #timer {
+      cursor: pointer;
+    }
+    #helpModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+    #helpModalContent {
+      background: #222;
+      color: white;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 600px;
+      width: 90%;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
+      position: relative;
+      max-height: 80vh;
+      overflow-y: auto;
+      text-align: center;
+    }
+    #helpModalContent h2 {
+      color: gold;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+    }
+    #iconLegend p {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 10px;
+      font-size: 1.1em;
+    }
+    #iconLegend p span:first-child {
+      font-size: 1.5em;
+      margin-right: 15px;
+      min-width: 40px;
+      text-align: center;
+    }
+    #helpModalContent .close-button {
+      background: gold;
+      color: black;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 30px;
+      font-size: 1.1em;
+      transition: background 0.3s ease;
+    }
+    #helpModalContent .close-button:hover {
+      background: #e5c300;
+    }
+    #fontSizeFeedback {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(0, 0, 0, 0.7);
+        color: gold;
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-size: 1.5em;
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity 0.5s ease-out;
+        pointer-events: none;
+    }
+	    #highlightFeedback {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-size: 1.5em;
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity 0.5s ease-out;
+        pointer-events: none;
+    }
+    #autoAdvanceTimerDisplay {
+      font-size: 1.0em;
+      color: white;
+      min-width: 40px;
+      text-align: center;
+    }
+    #autoAdvanceSetup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #222;
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        z-index: 10001;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+    }
+    #autoAdvanceSetup h3 {
+        margin-bottom: 15px;
+        color: gold;
+    }
+    #autoAdvanceDelayInput {
+        padding: 5px;
+        font-size: 1em;
+        width: 80px;
+        text-align: center;
+        margin-bottom: 15px;
+        background-color: #333;
+        color: white;
+        border: 1px solid #555;
+        border-radius: 4px;
+    }
+    #autoAdvanceSetup button {
+        background-color: #555;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        margin: 0 5px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    #autoAdvanceSetup button:hover {
+        background-color: #777;
+    }
+    #autoAdvanceSetup button:first-child {
+        background-color: gold;
+        color: black;
+    }
+    #autoAdvanceSetup button:first-child:hover {
+        background-color: #e5c300;
+    }
+    #autoAdvanceOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.7);
+        z-index: 10000;
+        display: none;
+    }
+    #cardCounter {
+      transition: all 0.5s ease;
+      padding: 3px 10px;
+      border-radius: 15px;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    #cardCounter.saved {
+      background-color: rgba(0, 128, 0, 0.7);
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    }
+    #cardCounter .current-card {
+      color: #32CD32;
+      font-weight: bold;
+      transition: color 0.5s ease;
+    }
+    #cardCounter .saved .current-card {
+      color: #00FF00;
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
+    }
+    #statsModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+    #statsModalContent {
+      background: #222;
+      color: white;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 600px;
+      width: 90%;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
+      position: relative;
+      max-height: 80vh;
+      overflow-y: auto;
+      text-align: left;
+    }
+    #statsModalContent h2 {
+      color: gold;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+      text-align: center;
+    }
+    .stats-section {
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #444;
+    }
+    .stats-section h3 {
+      color: #FFD700;
+      margin-bottom: 10px;
+    }
+    .card-review-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 5px;
+      border-bottom: 1px solid #333;
+    }
+    .card-review-item:nth-child(odd) {
+      background-color: rgba(255, 215, 0, 0.1);
+    }
+    .card-review-content {
+      flex-grow: 1;
+      margin-right: 15px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-review-time {
+      color: gold;
+      font-weight: bold;
+      min-width: 70px;
+      text-align: right;
+    }
+	#accuracy-results {
+    display: none; /* Inicialmente oculto */
+    font-size: 1.5em;
+    margin-bottom: 20px; /* Espaçamento aplicado somente quando visível */
+    }
+    #end-screen {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+      z-index: 10;
+      text-align: center;
+    }
+    #end-message {
+      font-size: 3em;
+      font-weight: bold;
+      margin-bottom: 5px;
+      text-align: center;
+      color: #FFD700;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(45deg, #FFD700, #D4AF37);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      padding: 20px;
+	  margin-bottom: 20px
+    }
+    #restart-button {
+      background: linear-gradient(to bottom, #FFD700, #D4AF37);
+      color: black;
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.2em;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+      transition: all 0.3s ease;
+    }
+    #restart-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    }
+    #loginModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.9);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .login-container {
+      background-color: #111;
+      padding: 30px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 0 20px rgba(255,215,0,0.5);
+    }
+    .login-container h2 {
+      color: #FFD700;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .login-form {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      color: white;
+      margin-bottom: 5px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #555;
+      background-color: #222;
+      color: white;
+    }
+    .login-button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(to bottom, #FFD700, #D4AF37);
+      color: black;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .login-button:disabled {
+      opacity: 0.8;
+      cursor: not-allowed;
+    }
+    .login-button .spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0, 0, 0, 0.3);
+      border-radius: 50%;
+      border-top-color: black;
+      animation: spin 1s ease-in-out infinite;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      margin-left: -10px;
+      margin-top: -10px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    #loginError {
+      color: #ff5555;
+      margin-top: 15px;
+      text-align: center;
+      display: none;
+    }
+    .logout-button {
+      background: linear-gradient(to bottom, #ff3333, #cc0000);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .logout-button:hover {
+      background: linear-gradient(to bottom, #ff5555, #dd0000);
+    }
+    .loading-indicator {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10001;
+      text-align: center;
+    }
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255, 215, 0, 0.3);
+      border-radius: 50%;
+      border-top-color: #FFD700;
+      animation: spin 1s ease-in-out infinite;
+      margin: 0 auto 15px;
+    }
+    .loading-text {
+      color: #FFD700;
+      font-size: 1.2em;
+    }
+    @keyframes pulseSuccess {
+      0% { box-shadow: 0 0 5px rgba(0, 255, 0, 0.5); }
+      50% { box-shadow: 0 0 20px rgba(0, 255, 0, 0.8); }
+      100% { box-shadow: 0 0 5px rgba(0, 255, 0, 0.5); }
+    }
+    #sessionExpiredModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.9);
+      z-index: 10000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    .session-expired-container {
+      background-color: #111;
+      padding: 30px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 0 20px rgba(255,0,0,0.5);
+      text-align: center;
+    }
+    .session-expired-container h2 {
+      color: #ff5555;
+      margin-bottom: 20px;
+    }
+    .session-expired-container p {
+      color: white;
+      margin-bottom: 20px;
+    }
+    .accuracy-button {
+      font-size: 1.4em !important;
+      transition: all 0.3s ease;
+    }
+    .accuracy-button.correct {
+      color: #4CAF50 !important;
+      text-shadow: 0 0 10px rgba(76, 175, 80, 0.7);
+    }
+    .accuracy-button.incorrect {
+      color: #F44336 !important;
+      text-shadow: 0 0 10px rgba(244, 67, 54, 0.7);
+    }
+    .stats-tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #444;
+    }
+    .stats-tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #333;
+      margin-right: 5px;
+      border-radius: 5px 5px 0 0;
+      transition: all 0.3s ease;
+    }
+    .stats-tab.active {
+      background-color: #FFD700;
+      color: black;
+      font-weight: bold;
+    }
+    .stats-content {
+      display: none;
+    }
+    .stats-content.active {
+      display: block;
+    }
+    .accuracy-summary {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .accuracy-meter {
+      display: flex;
+      height: 30px;
+      background-color: #333;
+      border-radius: 15px;
+      overflow: hidden;
+      margin: 15px 0;
+    }
+    .correct-portion {
+      background-color: #4CAF50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    .incorrect-portion {
+      background-color: #F44336;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    .review-option {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: rgba(255, 215, 0, 0.1);
+      border-radius: 5px;
+      text-align: center;
+    }
+    .review-button {
+      background: linear-gradient(to bottom, #FFD700, #D4AF37);
+      color: black;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+		.highlight-asterisk {
+      color: #0000FF !important;
+      font-weight: bold;
+    }
+    .highlight-asterisk-gold {
+      color: #FFD700 !important;
+      font-weight: bold;
+    }
+	    .highlight-asterisk-alt1 { /* Fundo branco – 1ª, 3ª, 5ª... → Azul */
+      color: #0000FF !important;
+      font-weight: bold;
+    }
+    .highlight-asterisk-alt2 { /* Fundo branco – 2ª, 4ª, 6ª... → Vermelho */
+      color: #ff0000 !important;
+      font-weight: bold;
+    }
+    .highlight-asterisk-gold-alt1 { /* Fundo preto – 1ª, 3ª, 5ª... → Amarelo */
+      color: #FFD700 !important;
+      font-weight: bold;
+    }
+    .highlight-asterisk-gold-alt2 { /* Fundo preto – 2ª, 4ª, 6ª... → Verde */
+      color: #89F336 !important;
+      font-weight: bold;
+    }
+	    /* Restaurar fundo preto nos menus de cor */
+    #cardColor,
+    #textColor {
+      background-color: #000 !important;
+      color: white !important;
+      border: 1px solid #555 !important;
+      padding: 2px 4px !important;
+    }
+	/* Estilos para o novo Modal de Configurações */
+    #settingsModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+    #settingsModalContent {
+      background: #222;
+      color: white;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 600px;
+      width: 90%;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
+      text-align: left;
+    }
+    #settingsModalContent h2 {
+      color: gold;
+      margin-bottom: 25px;
+      font-size: 1.8em;
+      text-align: center;
+    }
+    #settingsModalContent h3 {
+      color: #FFD700;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #444;
+      padding-bottom: 8px;
+    }
+    .settings-section {
+      margin-bottom: 20px;
+    }
+    .mode-selection label {
+      margin-right: 20px;
+      font-size: 1.1em;
+    }
+    .mode-selection input {
+      margin-right: 5px;
+    }
+    #provasOptions select {
+      padding: 8px;
+      background-color: #333;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 4px;
+      font-size: 1em;
+      width: 100%;
+    }
+    .settings-actions {
+      text-align: center;
+      margin-top: 30px;
+    }
+    .settings-actions .start-button {
+      background: linear-gradient(to bottom, #FFD700, #D4AF37);
+      color: black;
+      border: none;
+      padding: 12px 25px;
+      font-size: 1.1em;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-right: 15px;
+    }
+    .settings-actions .close-button {
+      background: #555;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1.1em;
+    }
+	.discipline-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+    .discipline-select {
+      flex-grow: 1;
+      padding: 8px;
+      background-color: #333;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 4px;
+    }
+    .quantity-input {
+      width: 70px;
+      padding: 8px;
+      text-align: center;
+      background-color: #333;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 4px;
+    }
+    .add-discipline-button {
+      background-color: #444;
+      border: 1px solid #666;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+    .total-questions-display {
+      margin-top: 15px;
+      font-size: 1.1em;
+      font-weight: bold;
+      color: gold;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <button class="tooltip" data-tooltip="Configurações" onclick="openSettingsModal()">⚙️</button> <!-- NOVO BOTÃO ADICIONADO AQUI -->
+    <button class="tooltip" data-tooltip="Ajuda" onclick="toggleHelpModal()">❓</button>
+    <button class="tooltip" data-tooltip="Cor do cartão" onclick="toggleCardColorMenu()">🖌️</button>
+    <select id="cardColor" onchange="changeCardColor(this.value)" style="display:none;">
+     <option value="white">Branco</option>
+      <option value="black">Preto</option>
+      <option value="darkblue">Azul Escuro</option>
+      <option value="aqua">Ciano</option>
+      <option value="indigo">Índigo</option>
+      <option value="purple">Roxo</option>
+      <option value="darkred">Vermelho Escuro</option>
+      <option value="gold">Dourado</option>
+    </select>
+    <button class="tooltip" data-tooltip="Cor da fonte" onclick="toggleTextColorMenu()">🔤</button>
+    <select id="textColor" onchange="changeTextColor(this.value)" style="display:none;">
+      <option value="black">Preto</option>
+      <option value="white">Branco</option>
+      <option value="darkblue">Azul Escuro</option>
+      <option value="aqua">Ciano</option>
+      <option value="indigo">Indigo</option>
+      <option value="purple">Roxo</option>
+      <option value="darkred">Vermelho Escuro</option>
+      <option value="gold">Dourado</option>
+    </select>
+    <button class="tooltip" data-tooltip="Aumentar fonte" onclick="adjustFontSize(1)">A+</button>
+    <button class="tooltip" data-tooltip="Diminuir fonte" onclick="adjustFontSize(-1)">A-</button>
+	<button class="tooltip" data-tooltip="Destacar *palavras*" onclick="toggleHighlightAsterisks()">✨</button>
+    <span class="tooltip" data-tooltip="Tempo de revisão" onclick="resetTimer()">⏱️ <span id="timer">00:00</span></span>
+    <button class="tooltip" data-tooltip="Estatísticas" onclick="toggleStatsModal()">📈</button>
+    <button id="reviewErrorsButton" class="tooltip" data-tooltip="Revisar apenas cards com erro" onclick="toggleReviewErrors()" style="display:none;">🔍</button>
+    </button>
+	<select id="categoryFilter" class="tooltip" data-tooltip="Filtrar por categoria" onchange="filterByCategory(this.value)">
+      <option value="Todas">Todas Categorias</option>
+    </select>
+	<button class="logout-button" onclick="logout()">
+      <i class="fas fa-sign-out-alt"></i> Sair
+  </div>
+  <div id="fontSizeFeedback"></div>
+  <div id="highlightFeedback"></div>
+  <div id="autoAdvanceSetup">
+      <h3>Tempo Automático (segundos)</h3>
+      <input type="number" id="autoAdvanceDelayInput" min="1" value="5" />
+      <div>
+          <button onclick="confirmAutoAdvanceDelay()">OK</button>
+          <button onclick="cancelAutoAdvanceDelay()">Cancelar</button>
+      </div>
+  </div>
+  <div id="autoAdvanceOverlay" onclick="cancelAutoAdvanceDelay()"></div>
+  <div id="card-container">
+    <div id="flashcard-content">
+      Por favor, faça login para acessar os flashcards.
+    </div>
+    <div id="end-screen">
+      <div id="end-message">Chico Concursos<br>Fim</div>
+      <button id="restart-button">RECOMEÇAR</button>
+	  <div id="accuracy-results" style="font-size: 1.5em;"></div>
+      <button id="review-errors-button" class="review-button" style="margin-top: 15px; display: none;">REVISAR ERROS</button>
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <div id="autoAdvanceControls" style="display: flex; align-items: center; gap: 8px;">
+  <!-- Botão Iniciar (aparece quando DESATIVADO) -->
+  <button id="autoAdvanceStartBtn" class="tooltip" data-tooltip="Iniciar temporizador" style="font-size: 1.2em;" onclick="startAutoAdvanceSmart()">⏳</button>
+
+  <!-- Botões de controle (aparecem quando ATIVO) -->
+ <div id="autoAdvanceActiveGroup" style="display: none; gap: 8px; align-items: center;">
+  <button class="tooltip" data-tooltip="Pausar/Continuar" onclick="pauseOrResumeAutoAdvance()" style="font-size: 1.2em;" id="pauseResumeBtn">⏸️</button>
+  <button class="tooltip" data-tooltip="Parar temporizador" onclick="stopAutoAdvance()" style="font-size: 1.2em;">⏹️</button>
+  <button class="tooltip" data-tooltip="Resetar contagem" onclick="resetAutoAdvanceTimer()" style="font-size: 1.2em;">↻</button>
+  <button class="tooltip" data-tooltip="Alterar tempo" onclick="openAutoAdvanceSettings()" style="font-size: 1.2em;">⚙️</button>
+  <span id="autoAdvanceTimerDisplay" style="font-size: 1.0em; min-width: 50px; color: white;">0s</span>
+</div>
+</div>
+    <input type="number" id="goToCard" min="1" placeholder="1" onchange="goToSpecificCard()" />
+    <span id="cardCounter">0/0</span>
+    <button class="accuracy-button" data-tooltip="Acertei (Tecla 1)" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="markAsCorrect()" id="correctButton">✅</button>
+    <button class="accuracy-button" data-tooltip="Errei (Tecla 2)" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="markAsIncorrect()" id="incorrectButton">❌</button>
+    <button id="shuffleButton" data-tooltip="Embaralhar cartas" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleShuffleMode()">🔀</button>
+	<button data-tooltip="Virar Card / Anterior (Alt)" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="reviewAndRetreat()">↩️</button>
+    <button data-tooltip="Voltar" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="prevCard()">⏪</button>
+    <button data-tooltip="Resposta/Perg." onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="flipCard()">⬇️</button>
+    <button data-tooltip="Avançar" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="nextCard()">⏩</button>
+    <button id="nextAndShow" data-tooltip="Virar Card / Próximo" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="reviewAndAdvance()">↪️</button>
+  </div>
+  <div id="helpModal" style="display:none;">
+    <div id="helpModalContent">
+      <h2>Ajuda - Significado dos Ícones</h2>
+      <div id="iconLegend">
+        <p><span>🖌️</span> Cor do cartão: Altera a cor de fundo do flashcard.</p>
+        <p><span>🔤</span> Cor da fonte: Altera a cor do texto do flashcard.</p>
+        <p><span>A+</span> Aumentar fonte: Aumenta o tamanho da letra do flashcard.</p>
+        <p><span>A-</span> Diminuir fonte: Diminui o tamanho da letra do flashcard.</p>
+        <p><span>⏱️</span> Tempo de revisão: Exibe o tempo decorrido e zera ao clicar.</p>
+        <p><span>📈</span> Estatísticas: Mostra seu desempenho and cards para revisão.</p>
+        <p><span>📂</span> Categoria: Filtra os cards por categoria.</p>
+        <p><span>🔍</span> Revisar Erros: Filtra apenas os cards marcados como erro.</p>
+		<p><span>✨</span> Cor destaque: Muda a cor dos termos entre astériscos, fundo preto-cor dourado, fundo branco-cor azul.</p>
+        <p><span>✅</span> Acertei: Marca o card atual como respondido corretamente.</p>
+        <p><span>❌</span> Errei: Marca o card atual como respondido incorretamente.</p>
+        <p><span>⏪</span> Voltar: Navega para o card anterior.</p>
+        <p><span>↩️</span> Virar Card / Anterior: Vira o card se na resposta, retrocede se na pergunta (tecla Alt).</p>
+        <p><span>🔀</span> Embaralhar cartas: Reorganiza aleatoriamente a ordem dos flashcards.</p>
+        <p><span>⬇️</span> Resposta/Perg.: Vira o flashcard para mostrar a resposta (ou pergunta).</p>
+        <p><span>⏩</span> Avançar: Navega para o próximo card.</p>
+        <p><span>↪️</span> Virar Card / Próximo: Vira o card se na pergunta, avança se na resposta (enter).</p>
+        <p><span>⏳</span> Iniciar/Parar Temporizador: Avança automaticamente para o próximo card após um tempo definido.</p>
+        <p><span>Enter</span> Tecla Enter: Vira o card se na pergunta, avança se na resposta (mesma ação do botão ↪️).</p>
+		<p><span>Alt</span> Virar Card / Anterior: Vira o card se na resposta, retrocede se na pergunta (tecla Alt).</p>
+    <p><span>1</span> Tecla 1: Marca o card como acerto.</p>
+    <p><span>2</span> Tecla 2: Marca o card como erro.</p>
+        <p><span>💚</span> Indicador Verde: O número em verde mostra que seu progresso foi salvo.</p>
+        <p><span>🚪</span> Sair: Encerra a sessão atual e retorna à tela de login.</p>
+        <p><span>🏁</span> Tela Final: Exibida quando todos os flashcards são revisados.</p>
+      </div>
+      <button class="close-button" onclick="toggleHelpModal()">Fechar</button>
+    </div>
+  </div>
+  <div id="statsModal" style="display:none;">
+    <div id="statsModalContent">
+      <h2>Estatísticas de Estudo</h2>
+      
+      <div class="stats-tabs">
+        <div class="stats-tab active" onclick="changeStatsTab('time')">Tempo por Card</div>
+        <div class="stats-tab" onclick="changeStatsTab('accuracy')">Acertos</div>
+      </div>
+      
+      <div class="stats-content active" id="timeStats">
+        <div class="stats-section">
+          <h3>Último Acesso</h3>
+          <p id="lastAccessDate">Carregando...</p>
+        </div>
+        <div class="stats-section">
+          <h3>Resumo de Desempenho</h3>
+          <p id="performanceSummary">Carregando...</p>
+        </div>
+        <div class="stats-section">
+          <h3>Cards para Revisão</h3>
+          <p>Baseado no seu tempo de resposta</p>
+          <div id="reviewCardsList"></div>
+        </div>
+      </div>
+      
+      <div class="stats-content" id="accuracyStats">
+        <div class="stats-section">
+          <h3>Desempenho de Acertos</h3>
+          <div class="accuracy-summary">
+            <p>Total de cards: <span id="totalCardsCount">0</span></p>
+            <p>Acertos: <span id="correctCount">0</span> | Erros: <span id="incorrectCount">0</span></p>
+            <div class="accuracy-meter">
+              <div class="correct-portion" id="correctMeter" style="width: 0%">0%</div>
+              <div class="incorrect-portion" id="incorrectMeter" style="width: 0%">0%</div>
+            </div>
+            <p>Taxa de acerto: <span id="accuracyRate">0%</span></p>
+          </div>
+        </div>
+        <div class="stats-section">
+          <h3>Cards com Erro</h3>
+          <p>Estes são os cards que você marcado como incorretos:</p>
+          <div id="incorrectCardsList"></div>
+        </div>
+        <div class="review-option">
+          <p>Quer revisar apenas os cards que errou?</p>
+          <button class="review-button" onclick="reviewIncorrectCards(); toggleStatsModal();">Revisar Cards com Erro</button>
+        </div>
+      </div>
+      
+      <button class="close-button" onclick="toggleStatsModal()">Fechar</button>
+    </div>
+  </div>
+  <!-- INÍCIO DO NOVO MODAL DE CONFIGURAÇÕES (COLE AQUI) -->
+  <div id="settingsModal" style="display:none;">
+    <div id="settingsModalContent">
+      <h2>Configurações de Estudo</h2>
+      
+      <div class="settings-section">
+        <h3>1. Escolha o Modo de Estudo</h3>
+        <div class="mode-selection">
+          <label>
+            <input type="radio" name="studyMode" value="simulado" checked onchange="switchStudyMode(this.value)"> Simulado
+          </label>
+          <label>
+            <input type="radio" name="studyMode" value="provas" onchange="switchStudyMode(this.value)"> Provas
+          </label>
+        </div>
+      </div>
+
+      <!-- Opções para o modo Provas -->
+      <div id="provasOptions" class="settings-section" style="display: none;">
+        <h3>2. Filtro para Provas</h3>
+        <label for="provasAno">Escolha o Ano:</label>
+        <select id="provasAno">
+          <option value="todos">Todos os Anos</option>
+          <!-- Os anos serão preenchidos dinamicamente, mas podemos adicionar alguns como exemplo -->
+          <option value="2023">2023</option>
+          <option value="2022">2022</option>
+          <option value="2021">2021</option>
+        </select>
+      </div>
+
+      <!-- Opções para o modo Simulado (espaço para futuras funcionalidades) -->
+      <!-- Opções para o modo Simulado -->
+      <div id="simuladoOptions" class="settings-section">
+        <h3>2. Monte seu Simulado</h3>
+		<div id="simuladoLoading" style="display: none; color: gold; margin-bottom: 10px;">Carregando disciplinas...</div> <!-- NOVA LINHA ADICIONADA -->
+        <div id="simuladoDisciplineInputs">
+          <!-- Linha de Disciplina (será o modelo para adicionar outras) -->
+          <div class="discipline-row">
+            <select class="discipline-select" onchange="updateTotalQuestions()">
+              <option value="">Selecione a Disciplina</option>
+              <!-- Preenchido via JavaScript -->
+            </select>
+            <input type="number" class="quantity-input" placeholder="Qtd" min="1" onchange="updateTotalQuestions()" onkeyup="updateTotalQuestions()">
+          </div>
+        </div>
+        <button class="add-discipline-button" onclick="addDisciplineRow()">+ Adicionar Disciplina</button>
+        <p class="total-questions-display">Total de Questões: <span id="totalSimuladoQuestions">0</span></p>
+      </div>
+
+      <div class="settings-actions">
+        <button id="startStudyBtn" class="start-button" onclick="startCustomStudy()">Iniciar Estudo</button> <!-- ID ADICIONADO AQUI -->
+        <button class="close-button" onclick="closeSettingsModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+  <!-- FIM DO NOVO MODAL DE CONFIGURAÇÕES -->
+  <div id="loginModal" style="display: flex;">
+    <div class="login-container">
+      <h2><i class="fas fa-lock"></i> Acesso aos Flashcards</h2>
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label for="loginEmail">Email:</label>
+          <input type="email" id="loginEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Senha:</label>
+          <input type="password" id="loginPassword" required>
+        </div>
+        <button type="submit" class="login-button" id="loginSubmitBtn">
+          <span id="loginBtnText">Acessar</span>
+          <div class="spinner" id="loginSpinner"></div>
+        </button>
+      </form>
+      <div id="loginError"></div>
+    </div>
+  </div>
+  <div class="loading-indicator" id="loadingIndicator">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Carregando flashcards...</div>
+  </div>
+  <div id="sessionExpiredModal" style="display:none;">
+    <div class="session-expired-container">
+      <h2><i class="fas fa-exclamation-triangle"></i> Sessão Expirada</h2>
+      <p>Sua sessão expirou devido à inatividade. Por favor, faça login novamente.</p>
+      <button class="login-button" onclick="location.reload()">Fazer Login Novamente</button>
+    </div>
+  </div>
+  <script>
+    // --- CONFIGURAÇÃO INICIAL ---
+    let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxfeIybUQvl-cb_VEBITzKF9Nbw97FgWMGWVF6pW-McV5MwVpJOoytWcVKl5dIApOjGZw/exec";
+    let isAuthenticated = false;
+    let userEmail = '';
+	let userAllowedCourses = []; // Nova variável: armazena os IDs de planilhas que o usuário pode acessar
+    let initialCards = [];
+    let cards = [];
+    let currentCard = 0;
+    let showingFront = true;
+    let fontSize = 21.6;
+    let timerSeconds = 0;
+    const timerElement = document.getElementById("timer");
+    const cardContainer = document.getElementById("card-container");
+    const cardCounter = document.getElementById("cardCounter");
+    const helpModal = document.getElementById("helpModal");
+    const fontSizeFeedback = document.getElementById("fontSizeFeedback");
+    let fontSizeDisplayTimeout;
+    let isShuffleActive = false;
+	let currentCardColor = 'white'; // Cor padrão
+    let currentTextColor = 'black'; // Cor padrão
+	let isHighlightModeActive = false;
+    // Variáveis para o Temporizador Automático
+    let autoAdvanceInterval = null;
+    let autoAdvanceSeconds = 0;
+    let autoAdvanceDelay = 5;
+    let isAutoAdvanceActive = false;
+
+    const autoAdvanceTimerDisplay = document.getElementById("autoAdvanceTimerDisplay");
+    // Variáveis para estatísticas
+    let cardResponseTimes = {};
+    let lastAccessDate = null;
+    // Estado para controlar se chegou ao fim
+    let isFinished = false;
+    // Variáveis para categorias
+    let categories = [];
+    let currentCategory = "Todas";
+    // Variáveis para medição de tempo de resposta
+    let cardViewStartTime = 0;
+    let isAutoAdvancePaused = false;
+let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay') 
+  ? parseInt(localStorage.getItem('lastAutoAdvanceDelay'), 10) 
+  : 0;
+
+    // Variáveis para controle de expiração de sessão
+    const SESSION_DURATION = 3 * 60 * 60 * 1000;
+    let sessionTimer = null;
+
+    // Variáveis para controle de acertos/erros
+    let cardAccuracy = {};
+    let isReviewErrorsMode = false;
+    let loadedSettingsCards = []; // NOVA VARIÁVEL
+
+    // Função para verificar autenticação e sessão
+    function requireAuth() {
+      if (!isAuthenticated) {
+        return false;
+      }
+      if (isSessionExpired()) {
+        expireSession();
+        return false;
+      }
+      return true;
+    }
+
+    // Função para resetar a UI após logout
+    function resetUIForLogout() {
+      document.getElementById("flashcard-content").textContent = "Por favor, faça login para acessar os flashcards.";
+      cardCounter.textContent = "0/0";
+      document.getElementById('end-screen').style.display = 'none';
+      document.getElementById('flashcard-content').style.display = 'block';
+      cardContainer.style.backgroundColor = "white";
+      document.getElementById("flashcard-content").style.color = "black";
+      document.getElementById('reviewErrorsButton').style.display = 'none';
+      document.getElementById('reviewErrorsButton').style.color = 'white';
+      document.getElementById('reviewErrorsButton').style.textShadow = 'none';
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginError').style.display = 'none';
+      
+      if (isAutoAdvanceActive) {
+        stopAutoAdvance();
+      }
+      
+      document.getElementById('statsModal').style.display = 'none';
+      document.getElementById('helpModal').style.display = 'none';
+      document.getElementById('sessionExpiredModal').style.display = 'none';
+      document.getElementById('autoAdvanceSetup').style.display = 'none';
+      document.getElementById('autoAdvanceOverlay').style.display = 'none';
+      document.getElementById('correctButton').classList.remove('correct');
+      document.getElementById('incorrectButton').classList.remove('incorrect');
+      document.getElementById('loginModal').style.display = 'flex';
+      
+      initialCards = [];
+      cards = [];
+      currentCard = 0;
+      showingFront = true;
+      isFinished = false;
+      isShuffleActive = false;
+      isReviewErrorsMode = false;
+      cardAccuracy = {};
+      cardResponseTimes = {};
+      currentCategory = "Todas";
+      
+      const categorySelect = document.getElementById("categoryFilter");
+      categorySelect.innerHTML = '<option value="Todas">Todas Categorias</option>';
+    }
+
+    // --- FUNÇÕES DE AUTENTICAÇÃO ---
+    function showLoginError(message) {
+      const errorElement = document.getElementById('loginError');
+      errorElement.textContent = message;
+      errorElement.style.display = 'block';
+    }
+
+    function hideLoginModal() {
+      document.getElementById('loginModal').style.display = 'none';
+      isAuthenticated = true;
+      document.getElementById("flashcard-content").textContent = "Carregando flashcards...";
+    }
+
+    function showLoadingIndicator(message = "Carregando...") {
+      const indicator = document.getElementById('loadingIndicator');
+      const text = indicator.querySelector('.loading-text');
+      text.textContent = message;
+      indicator.style.display = 'block';
+    }
+
+    function hideLoadingIndicator() {
+      document.getElementById('loadingIndicator').style.display = 'none';
+    }
+
+    function setLoginButtonLoading(isLoading) {
+      const button = document.getElementById('loginSubmitBtn');
+      const spinner = document.getElementById('loginSpinner');
+      const text = document.getElementById('loginBtnText');
+      if (isLoading) {
+        button.disabled = true;
+        text.style.visibility = 'hidden';
+        spinner.style.display = 'block';
+      } else {
+        button.disabled = false;
+        text.style.visibility = 'visible';
+        spinner.style.display = 'none';
+      }
+    }
+
+    function saveLoginTime() {
+      localStorage.setItem('loginTime', Date.now().toString());
+    }
+
+    function isSessionExpired() {
+      const loginTime = localStorage.getItem('loginTime');
+      if (!loginTime) return true;
+      
+      const currentTime = Date.now();
+      const elapsedTime = currentTime - parseInt(loginTime);
+      
+      return elapsedTime > SESSION_DURATION;
+    }
+
+    function startSessionTimer() {
+      if (sessionTimer) {
+        clearInterval(sessionTimer);
+      }
+      
+      sessionTimer = setInterval(() => {
+        if (isSessionExpired()) {
+          clearInterval(sessionTimer);
+          expireSession();
+        }
+      }, 60000);
+    }
+
+    function expireSession() {
+      if (isAutoAdvanceActive) {
+        stopAutoAdvance();
+      }
+      
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('loginTime');
+      
+      isAuthenticated = false;
+      userEmail = '';
+      
+      document.getElementById('sessionExpiredModal').style.display = 'flex';
+      document.getElementById("flashcard-content").textContent = "Sessão expirada. Por favor, faça login novamente.";
+      cardCounter.textContent = "0/0";
+    }
+
+    function logout() {
+      if (sessionTimer) {
+        clearInterval(sessionTimer);
+        sessionTimer = null;
+      }
+      
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('flashcardState');
+      localStorage.removeItem(`flashcardStats_${SHEET_ID}_${GID}`);
+      
+      isAuthenticated = false;
+      userEmail = '';
+      
+      resetUIForLogout();
+    }
+
+    async function login(event) {
+  if (event) event.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) {
+    showLoginError('Por favor, preencha todos os campos.');
+    return;
+  }
+  setLoginButtonLoading(true);
+  document.getElementById('loginError').style.display = 'none';
+  try {
+    const formData = new URLSearchParams();
+    formData.append('email', email);
+    formData.append('password', password);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const response = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status}`);
+    }
+    const result = await response.json();
+    if (result.success) {
+      userEmail = email;
+      userAllowedCourses = result.allowedCourses || []; // Armazena a lista de cursos permitidos vinda do App Script
+
+      // Verifica se o usuário tem permissão para acessar ESTA planilha específica
+      if (SHEET_ID && userAllowedCourses.length > 0 && !userAllowedCourses.includes(SHEET_ID)) {
+        showLoginError('Você não possui acesso a este curso.');
+        setLoginButtonLoading(false);
+        return; // Interrompe o login
+      }
+
+      // Se passou pela verificação, prossegue com o login normal
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userEmail', userEmail);
+      localStorage.setItem('userAllowedCourses', JSON.stringify(userAllowedCourses)); // Salva no localStorage para persistência
+      saveLoginTime();
+      startSessionTimer();
+      hideLoginModal();
+      showLoadingIndicator();
+      cardContainer.style.animation = 'none';
+      void cardContainer.offsetWidth;
+      cardContainer.style.animation = 'pulseSuccess 2s';
+      openSettingsModal(); // MODIFICADO AQUI
+      hideLoadingIndicator();
+    } else {
+      showLoginError(result.error || 'Erro durante a autenticação.');
+      setLoginButtonLoading(false);
+    }
+  } catch (error) {
+    console.error('Erro no login:', error);
+    if (error.name === 'AbortError') {
+      showLoginError('Tempo limite excedido. Verifique sua conexão e tente novamente.');
+    } else {
+      showLoginError('Erro ao conectar com o servidor. Tente novamente.');
+    }
+    setLoginButtonLoading(false);
+  }
+}
+
+    function checkAuthentication() {
+  const savedAuth = localStorage.getItem('isAuthenticated');
+  const savedEmail = localStorage.getItem('userEmail');
+  if (savedAuth === 'true' && savedEmail) {
+    if (isSessionExpired()) {
+      expireSession();
+      return;
+    }
+    isAuthenticated = true;
+    userEmail = savedEmail;
+
+    // Carrega os cursos permitidos do localStorage
+    const savedAllowedCourses = localStorage.getItem('userAllowedCourses');
+    userAllowedCourses = savedAllowedCourses ? JSON.parse(savedAllowedCourses) : [];
+
+    // Verifica permissão antes de carregar os flashcards
+    if (SHEET_ID && userAllowedCourses.length > 0 && !userAllowedCourses.includes(SHEET_ID)) {
+      document.getElementById("flashcard-content").textContent = "Você não possui acesso a este curso.";
+      cardCounter.textContent = "0/0";
+      document.getElementById('loginModal').style.display = 'flex'; // Mostra o modal de login novamente
+      return;
+    }
+
+    document.getElementById('loginModal').style.display = 'none';
+    document.getElementById("flashcard-content").textContent = "Carregando flashcards...";
+    startSessionTimer();
+    showLoadingIndicator();
+    openSettingsModal(); // MODIFICADO AQUI
+    hideLoadingIndicator(); // MODIFICADO AQUI
+  } else {
+    document.getElementById('loginModal').style.display = 'flex';
+  }
+}
+
+    // --- FUNÇÕES PRINCIPAIS ---
+    function getQueryParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    const SHEET_ID = getQueryParam('sheetId');
+    const GID = getQueryParam('gid') || '0';
+
+    function buildGoogleSheetCsvUrl(sheetId, gid) {
+        if (!sheetId) return null;
+        return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}`;
+    }
+
+    function parseCSVLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            const nextChar = line[i + 1];
+            if (char === '"' && !inQuotes) {
+                inQuotes = true;
+            } else if (char === '"' && nextChar === '"' && inQuotes) {
+                current += '"';
+                i++;
+            } else if (char === '"' && inQuotes) {
+                inQuotes = false;
+            } else if (char === ',' && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current.trim());
+        return result;
+    }
+
+    function splitCSVRecords(csvText) {
+        const records = [];
+        let currentRecord = '';
+        let inQuotes = false;
+        let i = 0;
+
+        while (i < csvText.length) {
+            const char = csvText[i];
+            const nextChar = csvText[i + 1];
+
+            if (char === '"' && !inQuotes) {
+                inQuotes = true;
+            } else if (char === '"' && nextChar === '"' && inQuotes) {
+                currentRecord += '""';
+                i += 2;
+                continue;
+            } else if (char === '"' && inQuotes) {
+                inQuotes = false;
+            } else if ((char === '\n' || (char === '\r' && nextChar === '\n')) && !inQuotes) {
+                if (char === '\r') {
+                    i++;
+                }
+                records.push(currentRecord);
+                currentRecord = '';
+                i++;
+                continue;
+            }
+            currentRecord += char;
+            i++;
+        }
+
+        if (currentRecord !== '') {
+            records.push(currentRecord);
+        }
+
+        return records;
+    }
+
+   function saveFlashcardState() {
+  if (!requireAuth()) return;
+  
+  const state = {
+    currentCard,
+    showingFront,
+    fontSize,
+    isShuffleActive,
+    deckId: `${SHEET_ID}_${GID}`,
+    currentCategory,
+    cardAccuracy,
+    isReviewErrorsMode,       // ← Vírgula adicionada aqui
+    currentCardColor,         // ← Agora OK
+    currentTextColor          // ← OK (não precisa de vírgula na última linha, mas pode ter)
+  };
+  
+  localStorage.setItem('flashcardState', JSON.stringify(state));
+  cardCounter.classList.add('saved');
+  setTimeout(() => cardCounter.classList.remove('saved'), 1000);
+}
+
+    function loadFlashcardState() {
+      const savedState = localStorage.getItem('flashcardState');
+      if (!savedState) return false;
+      
+      try {
+        const state = JSON.parse(savedState);
+        if (state.deckId === `${SHEET_ID}_${GID}`) {
+          currentCard = state.currentCard >= cards.length ? 0 : state.currentCard;
+          showingFront = state.showingFront;
+          fontSize = state.fontSize;
+          currentCategory = state.currentCategory || "Todas";
+          
+          if (state.cardAccuracy) cardAccuracy = state.cardAccuracy;
+          if (state.isReviewErrorsMode !== undefined) {
+            isReviewErrorsMode = state.isReviewErrorsMode;
+            document.getElementById('reviewErrorsButton').style.display = isReviewErrorsMode ? 'inline-block' : 'none';
+            if (isReviewErrorsMode) {
+              document.getElementById('reviewErrorsButton').style.color = '#ff5555';
+              document.getElementById('reviewErrorsButton').style.textShadow = '0 0 10px rgba(255, 85, 85, 0.7)';
+            }
+          }
+          
+          if (state.isShuffleActive !== isShuffleActive) {
+            isShuffleActive = state.isShuffleActive;
+            if (isShuffleActive) {
+              cards = [...cards].sort(() => Math.random() - 0.5);
+            } else {
+              cards = [...initialCards];
+            }
+          }
+		if (state.currentCardColor !== undefined) {
+        currentCardColor = state.currentCardColor;
+        cardContainer.style.backgroundColor = currentCardColor;
+        document.getElementById("cardColor").value = currentCardColor;
+      }
+      if (state.currentTextColor !== undefined) {
+        currentTextColor = state.currentTextColor;
+        document.getElementById("flashcard-content").style.color = currentTextColor;
+        document.getElementById("textColor").value = currentTextColor;
+      }
+          return true;
+        }
+      } catch (e) {
+        console.error("Erro ao carregar estado:", e);
+      }
+      return false;
+    }
+
+    async function loadFlashcardsFromGoogleSheet(sheetId, gid) { // MODIFICADO AQUI
+      if (!isAuthenticated) {
+        document.getElementById("flashcard-content").textContent = "Por favor, faça login para acessar os flashcards.";
+        cardCounter.textContent = "0/0";
+        return;
+      }
+      
+      if (isSessionExpired()) {
+        expireSession();
+        return;
+      }
+      
+      const csvUrl = buildGoogleSheetCsvUrl(sheetId, gid); // MODIFICADO AQUI
+      if (!csvUrl) {
+          document.getElementById("flashcard-content").textContent = "Erro: 'sheetId' não foi fornecido nos parâmetros da URL.";
+          cardCounter.textContent = "0/0";
+          return;
+      }
+      
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const response = await fetch(csvUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Erro HTTP! Status: ${response.status}. Detalhes: ${errorText.substring(0, 200)}...`);
+        }
+        
+        const text = await response.text();
+        const lines = splitCSVRecords(text).slice(1).filter(line => line.trim() !== "");
+
+        let loadedCards = [];
+        lines.forEach(line => {
+            const cols = parseCSVLine(line);
+            
+            // MODIFICAÇÃO: Primeiro, verificamos se a coluna da disciplina (índice 3) existe e não está vazia
+            const disciplina = (cols[3] || "").trim();
+
+            // O card só será processado se tiver uma disciplina válida e pelo menos as duas primeiras colunas
+            if (disciplina && cols.length >= 2) { 
+                let rawFrontText = cols[0];
+                let rawBackText = cols[1];
+                let frontText = (rawFrontText || '').trim();
+                let backText = (rawBackText || '').trim();
+
+                // Coluna 6 (índice 5) é o Peso
+                let peso = parseInt(cols[5]) || 1;
+                
+                // Agora, o card só é adicionado se tiver uma disciplina
+                loadedCards.push({ front: frontText, back: backText, disciplina: disciplina, peso: peso });
+            }
+        });
+
+        if (loadedCards.length === 0) {
+            document.getElementById("flashcard-content").textContent = "Nenhum flashcard encontrado na planilha.";
+            cardCounter.textContent = "0/0";
+        } else {
+            initialCards = loadedCards;
+            cards = [...initialCards];
+            categories = ["Todas", ...new Set(loadedCards.map(card => card.category))];
+            const categorySelect = document.getElementById("categoryFilter");
+            categorySelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+            
+            const hasSavedState = loadFlashcardState();
+            if (!hasSavedState) {
+              currentCard = 0;
+              showingFront = true;
+              currentCategory = "Todas";
+              cardAccuracy = {};
+              isReviewErrorsMode = false;
+            } else {
+              filterByCategory(currentCategory, true);
+            }
+            
+            loadStatsFromStorage();
+            updateCard();
+        }
+		return loadedCards; // MODIFICADO: A função agora retorna os cards
+      } catch (error) {
+          console.error("Erro ao carregar os flashcards:", error);
+          document.getElementById("flashcard-content").textContent = `Erro ao carregar flashcards: ${error.message}`;
+          cardCounter.textContent = "0/0";
+		  return []; // Em caso de erro, retorna uma lista vazia
+      }
+    }
+
+    function filterByCategory(category, skipSave = false) {
+      if (!requireAuth()) return;
+      
+      currentCategory = category;
+      const categorySelect = document.getElementById("categoryFilter");
+      categorySelect.value = category;
+	  categorySelect.title = category; // ← mostra o nome completo em tooltip
+      
+      if (category === "Todas") {
+        cards = [...initialCards];
+      } else {
+        cards = initialCards.filter(card => card.category === category);
+      }
+      
+      if (isReviewErrorsMode) {
+        cards = cards.filter((card, index) => {
+          const originalIndex = initialCards.indexOf(card);
+          return cardAccuracy[originalIndex] && cardAccuracy[originalIndex].incorrect > 0;
+        });
+      }
+      
+      if (isShuffleActive) {
+        cards = [...cards].sort(() => Math.random() - 0.5);
+      }
+      
+      if (!skipSave) {
+        currentCard = 0;
+        showingFront = true;
+      }
+      
+      updateCard();
+      if (!skipSave) {
+        saveFlashcardState();
+      }
+    }
+
+        function updateCard() {
+      if (!requireAuth() || cards.length === 0 || isFinished) return;
+      const card = cards[currentCard];
+      const contentElement = document.getElementById("flashcard-content");
+      contentElement.textContent = showingFront ? card.front : card.back;
+      const originalIndex = initialCards.indexOf(cards[currentCard]);
+const originalNumber = originalIndex !== -1 ? originalIndex + 1 : '?';
+cardCounter.innerHTML = `<span class="current-card">${originalNumber}</span>/<span>${initialCards.length}</span>`;
+      contentElement.style.fontSize = fontSize + "pt";
+      updateAccuracyButtons();
+      if (showingFront) {
+        startResponseTimeMeasurement();
+      }
+      if (isAutoAdvanceActive) {
+        autoAdvanceSeconds = autoAdvanceDelay;
+        updateAutoAdvanceDisplay();
+      }
+      if (isHighlightModeActive) {
+        applyAsteriskHighlight();
+      }
+    }
+
+    function updateAccuracyButtons() {
+      const correctButton = document.getElementById('correctButton');
+      const incorrectButton = document.getElementById('incorrectButton');
+      
+      const currentOriginalCard = initialCards.indexOf(cards[currentCard]);
+      
+      if (currentOriginalCard !== -1 && cardAccuracy[currentOriginalCard]) {
+        if (cardAccuracy[currentOriginalCard].correct > 0) {
+          correctButton.classList.add('correct');
+          incorrectButton.classList.remove('incorrect');
+        } else if (cardAccuracy[currentOriginalCard].incorrect > 0) {
+          incorrectButton.classList.add('incorrect');
+          correctButton.classList.remove('correct');
+        } else {
+          correctButton.classList.remove('correct');
+          incorrectButton.classList.remove('incorrect');
+        }
+      } else {
+        correctButton.classList.remove('correct');
+        incorrectButton.classList.remove('incorrect');
+      }
+    }
+
+    function nextCard() {
+      if (!requireAuth() || isFinished) return;
+      
+      if (currentCard === cards.length - 1) {
+        showEndScreen();
+        saveFlashcardState();
+        return;
+      }
+      
+      currentCard = (currentCard + 1) % cards.length;
+      showingFront = true;
+      updateCard();
+      saveFlashcardState();
+    }
+
+    function prevCard() {
+      if (!requireAuth() || isFinished) return;
+      
+      currentCard = (currentCard - 1 + cards.length) % cards.length;
+      showingFront = true;
+      updateCard();
+      saveFlashcardState();
+    }
+
+    function flipCard() {
+      if (!requireAuth() || isFinished) return;
+      
+      if (showingFront) {
+        endResponseTimeMeasurement();
+      }
+      
+      showingFront = !showingFront;
+      updateCard();
+      saveFlashcardState();
+    }
+
+    function reviewAndRetreat() {
+      if (!requireAuth() || isFinished) return;
+      
+      if (!showingFront) {
+        showingFront = true;
+        updateCard();
+      } else {
+        if (currentCard === 0) {
+          currentCard = cards.length - 1;
+        } else {
+          currentCard--;
+        }
+        showingFront = false;
+        updateCard();
+      }
+      saveFlashcardState();
+    }
+
+    function reviewAndAdvance() {
+      if (!requireAuth() || isFinished) return;
+      
+      if (showingFront) {
+        endResponseTimeMeasurement();
+        showingFront = false;
+        updateCard();
+      } else {
+        nextCard();
+      }
+      saveFlashcardState();
+    }
+
+    function markAsCorrect() {
+      if (!requireAuth() || isFinished) return;
+      
+      const currentOriginalCard = initialCards.indexOf(cards[currentCard]);
+      
+      if (currentOriginalCard !== -1) {
+        if (!cardAccuracy[currentOriginalCard]) {
+          cardAccuracy[currentOriginalCard] = { correct: 0, incorrect: 0 };
+        }
+        
+        cardAccuracy[currentOriginalCard].correct++;
+        updateAccuracyButtons();
+        nextCard();
+        saveFlashcardState();
+      }
+    }
+
+    function markAsIncorrect() {
+      if (!requireAuth() || isFinished) return;
+      
+      const currentOriginalCard = initialCards.indexOf(cards[currentCard]);
+      
+      if (currentOriginalCard !== -1) {
+        if (!cardAccuracy[currentOriginalCard]) {
+          cardAccuracy[currentOriginalCard] = { correct: 0, incorrect: 0 };
+        }
+        
+        cardAccuracy[currentOriginalCard].incorrect++;
+        updateAccuracyButtons();
+        nextCard();
+        saveFlashcardState();
+      }
+    }
+
+    function toggleReviewErrors() {
+      if (!requireAuth()) return;
+      
+      isReviewErrorsMode = !isReviewErrorsMode;
+      
+      if (isReviewErrorsMode) {
+        cards = cards.filter((card, index) => {
+          const originalIndex = initialCards.indexOf(card);
+          return cardAccuracy[originalIndex] && cardAccuracy[originalIndex].incorrect > 0;
+        });
+        
+        if (cards.length === 0) {
+          alert("Não há cards marcados como incorretos para revisão.");
+          isReviewErrorsMode = false;
+          cards = [...initialCards];
+          if (currentCategory !== "Todas") {
+            cards = initialCards.filter(card => card.category === currentCategory);
+          }
+          document.getElementById('reviewErrorsButton').style.display = 'none';
+          return;
+        }
+        
+        document.getElementById('reviewErrorsButton').style.color = '#ff5555';
+        document.getElementById('reviewErrorsButton').style.textShadow = '0 0 10px rgba(255, 85, 85, 0.7)';
+      } else {
+        if (currentCategory === "Todas") {
+          cards = [...initialCards];
+        } else {
+          cards = initialCards.filter(card => card.category === currentCategory);
+        }
+        
+        document.getElementById('reviewErrorsButton').style.color = 'white';
+        document.getElementById('reviewErrorsButton').style.textShadow = 'none';
+      }
+      
+      if (isShuffleActive) {
+        cards = [...cards].sort(() => Math.random() - 0.5);
+      }
+      
+      currentCard = 0;
+      showingFront = true;
+      updateCard();
+      saveFlashcardState();
+    }
+
+    function reviewIncorrectCards() {
+      isReviewErrorsMode = true;
+      document.getElementById('reviewErrorsButton').style.display = 'inline-block';
+      document.getElementById('reviewErrorsButton').style.color = '#ff5555';
+      document.getElementById('reviewErrorsButton').style.textShadow = '0 0 10px rgba(255, 85, 85, 0.7)';
+      
+      if (currentCategory === "Todas") {
+        cards = [...initialCards];
+      } else {
+        cards = initialCards.filter(card => card.category === currentCategory);
+      }
+      
+      cards = cards.filter((card, index) => {
+        const originalIndex = initialCards.indexOf(card);
+        return cardAccuracy[originalIndex] && cardAccuracy[originalIndex].incorrect > 0;
+      });
+      
+      if (cards.length === 0) {
+        alert("Não há cards marcados como incorretos para revisão.");
+        isReviewErrorsMode = false;
+        cards = [...initialCards];
+        if (currentCategory !== "Todas") {
+          cards = initialCards.filter(card => card.category === currentCategory);
+        }
+        document.getElementById('reviewErrorsButton').style.display = 'none';
+        return;
+      }
+      
+      if (isShuffleActive) {
+        cards = [...cards].sort(() => Math.random() - 0.5);
+      }
+      
+      currentCard = 0;
+      showingFront = true;
+      updateCard();
+      saveFlashcardState();
+    }
+
+  function toggleShuffleMode() {
+  if (!requireAuth() || isFinished) return;
+  const shuffleButton = document.getElementById("shuffleButton");
+  if (!isShuffleActive) {
+    // Embaralhar
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1)); // Correção: uso correto de random
+      [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+       isShuffleActive = true;
+    shuffleButton.style.color = "#00FFFF";
+    shuffleButton.style.textShadow = "0 0 8px #00FFFF, 0 0 10px #00FFFF, 0 0 15px rgba(0, 255, 255, 0.8)";
+  } else {
+    // Restaurar ordem original
+    if (currentCategory === "Todas") {
+      cards = [...initialCards];
+    } else {
+      cards = initialCards.filter(card => card.category === currentCategory);
+    }
+    if (isReviewErrorsMode) {
+      cards = cards.filter((card, index) => {
+        const originalIndex = initialCards.indexOf(card);
+        return cardAccuracy[originalIndex] && cardAccuracy[originalIndex].incorrect > 0;
+      });
+    }
+    isShuffleActive = false;
+    shuffleButton.style.color = "white";
+    shuffleButton.style.textShadow = "none";
+  }
+  currentCard = 0;
+  showingFront = true;
+  updateCard();
+  saveFlashcardState();
+}
+
+    function adjustFontSize(change) {
+      if (!requireAuth()) return;
+      
+      fontSize += change * 1.2;
+      fontSize = Math.max(10, Math.min(48, fontSize));
+      document.getElementById("flashcard-content").style.fontSize = fontSize + "pt";
+      fontSizeFeedback.textContent = `${fontSize.toFixed(1)}pt`;
+      fontSizeFeedback.style.opacity = 1;
+      clearTimeout(fontSizeDisplayTimeout);
+      fontSizeDisplayTimeout = setTimeout(() => {
+        fontSizeFeedback.style.opacity = 0;
+      }, 1500);
+      saveFlashcardState();
+    }
+
+    function toggleCardColorMenu() {
+      if (!requireAuth()) return;
+      
+      const menu = document.getElementById("cardColor");
+      menu.style.display = menu.style.display === "none" ? "inline-block" : "none";
+    }
+
+    function toggleTextColorMenu() {
+      if (!requireAuth()) return;
+      
+      const menu = document.getElementById("textColor");
+      menu.style.display = menu.style.display === "none" ? "inline-block" : "none";
+    }
+
+ function changeCardColor(color) {
+  if (!requireAuth()) return;
+  cardContainer.style.backgroundColor = color;
+  currentCardColor = color; // Salva a cor atual
+  saveFlashcardState();
+}
+
+function changeTextColor(color) {
+  if (!requireAuth()) return;
+  document.getElementById("flashcard-content").style.color = color;
+  currentTextColor = color; // Salva a cor atual
+  saveFlashcardState();
+}
+
+    function resetTimer() {
+      if (!requireAuth()) return;
+      
+      timerSeconds = 0;
+      timerElement.textContent = "00:00";
+    }
+
+    function updateTimer() {
+      if (!isAuthenticated) return;
+      timerSeconds++;
+      const minutes = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+      const seconds = String(timerSeconds % 60).padStart(2, '0');
+      timerElement.textContent = `${minutes}:${seconds}`;
+    }
+
+    function goToSpecificCard() {
+      if (!requireAuth() || isFinished) return;
+      
+      const value = document.getElementById("goToCard").value;
+      const number = parseInt(value, 10);
+      if (!isNaN(number) && number >= 1 && number <= cards.length) {
+        currentCard = number - 1;
+        showingFront = true;
+        updateCard();
+        saveFlashcardState();
+      } else {
+        alert("Número do card inválido. Insira um número entre 1 and " + cards.length);
+      }
+      document.getElementById("goToCard").value = '';
+    }
+
+    function showTooltipOnHover(el) {
+      clearTimeout(el.tooltipTimer);
+      el.classList.add("show-tooltip");
+      el.tooltipTimer = setTimeout(() => {
+        el.classList.remove("show-tooltip");
+      }, 1000);
+    }
+
+    function hideTooltipOnLeave(el) {
+      clearTimeout(el.tooltipTimer);
+      el.classList.remove("show-tooltip");
+    }
+
+    function toggleHelpModal() {
+      helpModal.style.display = helpModal.style.display === "none" ? "flex" : "none";
+    }
+
+    // Funções para o Temporizador Automático
+   function toggleAutoAdvance() {
+  if (!requireAuth()) return;
+  
+  if (!isAutoAdvanceActive) {
+    // Iniciar com último tempo usado
+    startAutoAdvanceWithDelay(lastAutoAdvanceDelay);
+  } else if (isAutoAdvancePaused) {
+    // Continuar se estiver pausado
+    resumeAutoAdvance();
+  } else {
+    // Pausar se estiver rodando
+    pauseAutoAdvance();
+  }
+  }
+
+    function startAutoAdvance() {
+        if (!requireAuth()) return;
+        
+        if (isAutoAdvanceActive) return;
+        document.getElementById("autoAdvanceDelayInput").value = autoAdvanceDelay;
+        document.getElementById("autoAdvanceSetup").style.display = "flex";
+        document.getElementById("autoAdvanceOverlay").style.display = "block";
+    }
+
+    function confirmAutoAdvanceDelay() {
+  if (!requireAuth()) return;
+  const userInput = document.getElementById("autoAdvanceDelayInput").value;
+  const newDelay = parseInt(userInput, 10);
+  document.getElementById("autoAdvanceSetup").style.display = "none";
+  document.getElementById("autoAdvanceOverlay").style.display = "none";
+  
+  if (isNaN(newDelay) || newDelay <= 0) {
+    showFeedback("Número inválido!", "#ff5555");
+    return;
+  }
+  
+    lastAutoAdvanceDelay = newDelay;
+  localStorage.setItem('lastAutoAdvanceDelay', newDelay.toString());
+  if (isAutoAdvanceActive) {
+    autoAdvanceDelay = newDelay;
+    autoAdvanceSeconds = newDelay;
+    updateAutoAdvanceDisplay();
+    showFeedback(`Tempo alterado para ${newDelay}s`, "gold");
+  } else {
+    startAutoAdvanceWithDelay(newDelay);
+    showFeedback(`Temporizador iniciado (${newDelay}s)`, "gold");
+  }
+}
+
+    function cancelAutoAdvanceDelay() {
+        document.getElementById("autoAdvanceSetup").style.display = "none";
+        document.getElementById("autoAdvanceOverlay").style.display = "none";
+    }
+
+ function stopAutoAdvance() {
+  if (!isAutoAdvanceActive) return;
+  clearInterval(autoAdvanceInterval);
+  autoAdvanceInterval = null;
+  isAutoAdvanceActive = false;
+  isAutoAdvancePaused = false;
+  autoAdvanceSeconds = 0;
+  updateAutoAdvanceDisplay();
+  updateAutoAdvanceUI(); // ← ESSENCIAL: restaura o botão ⏳
+}
+
+    function updateAutoAdvanceDisplay() {
+        if (autoAdvanceTimerDisplay) autoAdvanceTimerDisplay.textContent = `${autoAdvanceSeconds}s`;
+    }
+
+    function recordResponseTime(cardIndex, timeSpent) {
+      if (!requireAuth()) return;
+      
+      if (!cardResponseTimes[cardIndex]) {
+        cardResponseTimes[cardIndex] = { times: [], avgTime: 0 };
+      }
+      
+      cardResponseTimes[cardIndex].times.push(timeSpent);
+      const times = cardResponseTimes[cardIndex].times;
+      const sum = times.reduce((a, b) => a + b, 0);
+      cardResponseTimes[cardIndex].avgTime = Math.round(sum / times.length);
+    }
+
+    function saveStatsToStorage() {
+      if (!requireAuth()) return;
+      
+      const stats = {
+        responseTimes: cardResponseTimes,
+        lastAccess: new Date().toISOString(),
+        cardAccuracy: cardAccuracy
+      };
+      
+      localStorage.setItem(`flashcardStats_${SHEET_ID}_${GID}`, JSON.stringify(stats));
+    }
+
+    function loadStatsFromStorage() {
+      const savedStats = localStorage.getItem(`flashcardStats_${SHEET_ID}_${GID}`);
+      if (!savedStats) return;
+      
+      try {
+        const stats = JSON.parse(savedStats);
+        cardResponseTimes = stats.responseTimes || {};
+        if (stats.lastAccess) lastAccessDate = new Date(stats.lastAccess);
+        if (stats.cardAccuracy) cardAccuracy = stats.cardAccuracy;
+      } catch (e) {
+        console.error("Erro ao carregar estatísticas:", e);
+      }
+    }
+
+    function startResponseTimeMeasurement() {
+      cardViewStartTime = Date.now();
+    }
+
+    function endResponseTimeMeasurement() {
+      if (cardViewStartTime > 0) {
+        const timeSpent = Math.round((Date.now() - cardViewStartTime) / 1000);
+        recordResponseTime(currentCard, timeSpent);
+        saveStatsToStorage();
+        cardViewStartTime = 0;
+      }
+    }
+
+    function changeStatsTab(tabName) {
+      document.querySelectorAll('.stats-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      document.querySelectorAll('.stats-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      
+      document.querySelector(`.stats-tab:nth-child(${tabName === 'time' ? 1 : 2})`).classList.add('active');
+      document.getElementById(`${tabName}Stats`).classList.add('active');
+      
+      if (tabName === 'accuracy') {
+        updateAccuracyStats();
+      }
+    }
+
+    function updateAccuracyStats() {
+      if (!requireAuth()) return;
+      
+      let totalCorrect = 0;
+      let totalIncorrect = 0;
+      let totalCards = initialCards.length;
+      
+      Object.values(cardAccuracy).forEach(accuracy => {
+        totalCorrect += accuracy.correct || 0;
+        totalIncorrect += accuracy.incorrect || 0;
+      });
+      
+      const totalAttempts = totalCorrect + totalIncorrect;
+      const accuracyRate = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
+      
+      document.getElementById('totalCardsCount').textContent = totalCards;
+      document.getElementById('correctCount').textContent = totalCorrect;
+      document.getElementById('incorrectCount').textContent = totalIncorrect;
+      document.getElementById('accuracyRate').textContent = `${accuracyRate}%`;
+      
+      const correctPercentage = totalAttempts > 0 ? (totalCorrect / totalAttempts) * 100 : 0;
+      const incorrectPercentage = totalAttempts > 0 ? (totalIncorrect / totalAttempts) * 100 : 0;
+      
+      document.getElementById('correctMeter').style.width = `${correctPercentage}%`;
+      document.getElementById('correctMeter').textContent = `${Math.round(correctPercentage)}%`;
+      document.getElementById('incorrectMeter').style.width = `${incorrectPercentage}%`;
+      document.getElementById('incorrectMeter').textContent = `${Math.round(incorrectPercentage)}%`;
+      
+      const incorrectCardsList = document.getElementById('incorrectCardsList');
+      incorrectCardsList.innerHTML = '';
+      
+      let hasIncorrectCards = false;
+      
+      initialCards.forEach((card, index) => {
+        if (cardAccuracy[index] && cardAccuracy[index].incorrect > 0) {
+          hasIncorrectCards = true;
+          const item = document.createElement('div');
+          item.className = 'card-review-item';
+          item.innerHTML = `
+            <div class="card-review-content">
+              <strong>Card #${index + 1}:</strong> ${card.front.substring(0, 50)}${card.front.length > 50 ? '...' : ''}
+            </div>
+            <div class="card-review-time">${cardAccuracy[index].incorrect} ❌</div>
+          `;
+          incorrectCardsList.appendChild(item);
+        }
+      });
+      
+      if (!hasIncorrectCards) {
+        incorrectCardsList.innerHTML = '<p>Nenhum card marcado como incorreto.</p>';
+      }
+    }
+
+    function updateStatsModal() {
+      if (!requireAuth()) return;
+      
+      const lastAccessElement = document.getElementById("lastAccessDate");
+      if (lastAccessDate) {
+        lastAccessElement.textContent = lastAccessDate.toLocaleString();
+      } else {
+        lastAccessElement.textContent = "Nenhum registro encontrado.";
+      }
+      
+      const performanceElement = document.getElementById("performanceSummary");
+      const cardEntries = Object.entries(cardResponseTimes);
+      
+      if (cardEntries.length === 0) {
+        performanceElement.innerHTML = '<p>Nenhum dado de desempenho disponível.</p>';
+      } else {
+        let totalTime = 0;
+        let totalCards = 0;
+        cardEntries.forEach(([cardIndex, data]) => {
+          totalTime += data.avgTime * data.times.length;
+          totalCards += data.times.length;
+        });
+        
+        const avgTime = totalCards > 0 ? Math.round(totalTime / totalCards) : 0;
+        performanceElement.innerHTML = `
+          <p>Total de cards revisados: <strong>${cardEntries.length}</strong></p>
+          <p>Tempo médio por card: <strong>${avgTime}s</strong></p>
+        `;
+      }
+      
+      const reviewCardsListElement = document.getElementById("reviewCardsList");
+      reviewCardsListElement.innerHTML = '';
+      
+      if (cardEntries.length === 0) {
+        reviewCardsListElement.innerHTML = '<p>Nenhum dado de tempo de resposta disponível.</p>';
+        return;
+      }
+      
+      cardEntries.sort((a, b) => b[1].avgTime - a[1].avgTime);
+      cardEntries.forEach(([cardIndex, data]) => {
+        const card = initialCards[cardIndex];
+        if (card) {
+          const item = document.createElement('div');
+          item.className = 'card-review-item';
+          item.innerHTML = `
+            <div class="card-review-content">
+              <strong>Card #${parseInt(cardIndex) + 1}:</strong> ${card.front.substring(0, 50)}${card.front.length > 50 ? '...' : ''}
+            </div>
+            <div class="card-review-time">${data.avgTime}s</div>
+          `;
+          reviewCardsListElement.appendChild(item);
+        }
+      });
+    }
+
+    function toggleStatsModal() {
+      if (!requireAuth()) return;
+      
+      const modal = document.getElementById("statsModal");
+      if (modal.style.display === "none") {
+        modal.style.display = "flex";
+        updateStatsModal();
+        updateAccuracyStats();
+      } else {
+        modal.style.display = "none";
+      }
+    }
+
+    function showEndScreen() {
+      if (!requireAuth()) return;
+      
+      document.getElementById('flashcard-content').style.display = 'none';
+      document.getElementById('end-screen').style.display = 'flex';
+      isFinished = true;
+      
+      let totalCorrect = 0;
+      let totalIncorrect = 0;
+      
+      Object.values(cardAccuracy).forEach(accuracy => {
+        totalCorrect += accuracy.correct || 0;
+        totalIncorrect += accuracy.incorrect || 0;
+      });
+      
+      const totalAttempts = totalCorrect + totalIncorrect;
+      const accuracyRate = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
+      
+      document.getElementById('accuracy-results').innerHTML = `
+        <p>Acertos: ${totalCorrect} | Erros: ${totalIncorrect}</p>
+        <p>Taxa de acerto: ${accuracyRate}%</p>
+      `;
+      
+      if (totalIncorrect > 0) {
+        document.getElementById('review-errors-button').style.display = 'block';
+      } else {
+        document.getElementById('review-errors-button').style.display = 'none';
+      }
+    }
+
+    function restartFlashcards() {
+      if (!requireAuth()) return;
+      
+      document.getElementById('end-screen').style.display = 'none';
+      document.getElementById('flashcard-content').style.display = 'block';
+      currentCard = 0;
+      showingFront = true;
+      isFinished = false;
+      updateCard();
+      saveFlashcardState();
+    }
+
+    function reviewErrorsFromEndScreen() {
+      document.getElementById('end-screen').style.display = 'none';
+      document.getElementById('flashcard-content').style.display = 'block';
+      isFinished = false;
+      reviewIncorrectCards();
+    }
+
+    // --- INICIALIZAÇÃO ---
+   document.addEventListener("keydown", (e) => {
+  const loginModal = document.getElementById('loginModal');
+  if (window.getComputedStyle(loginModal).display === 'flex') {
+    return;
+  }
+  const activeElement = document.activeElement;
+  const isInputFocused = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT';
+  if (isInputFocused) {
+    return;
+  }
+
+  // --- Atalhos do temporizador (devem vir ANTES dos demais) ---
+  if (e.key === "p" || e.key === "P") {
+    e.preventDefault();
+    if (isAutoAdvanceActive) {
+      pauseOrResumeAutoAdvance();
+    }
+  }
+  if (e.key === "r" || e.key === "R") {
+    e.preventDefault();
+    if (isAutoAdvanceActive) {
+      resetAutoAdvanceTimer();
+      showFeedback("Temporizador resetado!", "gold");
+    }
+  }
+  if (e.key === "t" || e.key === "T") {
+    e.preventDefault();
+    openAutoAdvanceSettings();
+  }
+
+  // --- Demais atalhos ---
+  if (e.key === "Enter") {
+    e.preventDefault();
+    reviewAndAdvance();
+  }
+  if (e.key === "Alt") {
+    e.preventDefault();
+    reviewAndRetreat();
+  }
+  if (e.key === "1") {
+    e.preventDefault();
+    markAsCorrect();
+  }
+  if (e.key === "2") {
+    e.preventDefault();
+    markAsIncorrect();
+  }
+  if (e.key === " ") {
+    e.preventDefault();
+  }
+});
+
+    setInterval(updateTimer, 1000);
+
+    document.getElementById('loginForm').addEventListener('submit', login);
+
+    document.addEventListener('DOMContentLoaded', checkAuthentication);
+
+    document.getElementById('restart-button').addEventListener('click', restartFlashcards);
+
+    document.getElementById('review-errors-button').addEventListener('click', reviewErrorsFromEndScreen);
+       function toggleHighlightAsterisks() {
+      isHighlightModeActive = !isHighlightModeActive;
+      const feedback = document.getElementById("highlightFeedback");
+      
+      if (isHighlightModeActive) {
+        applyAsteriskHighlight();
+        feedback.textContent = "Destaque ATIVADO";
+        feedback.style.color = "#4CAF50"; // Verde
+      } else {
+        const contentElement = document.getElementById("flashcard-content");
+        const currentText = showingFront ? cards[currentCard].front : cards[currentCard].back;
+        contentElement.textContent = currentText;
+        feedback.textContent = "Destaque DESATIVADO";
+        feedback.style.color = "#F44336"; // Vermelho
+      }
+      
+      // Mostrar feedback
+      feedback.style.opacity = "1";
+      setTimeout(() => {
+        feedback.style.opacity = "0";
+      }, 1500);
+    }
+
+        function applyAsteriskHighlight() {
+      if (!requireAuth() || cards.length === 0 || !isHighlightModeActive) return;
+      const container = document.getElementById("card-container");
+      const contentElement = document.getElementById("flashcard-content");
+      const currentText = showingFront ? cards[currentCard].front : cards[currentCard].back;
+      const bgColor = window.getComputedStyle(container).backgroundColor;
+      const isBlackBackground = (bgColor === 'rgb(0, 0, 0)' || bgColor === 'black');
+
+      // Divide o texto mantendo os asteriscos como delimitadores
+      const parts = currentText.split(/(\*[^*]+\*)/g);
+      let result = '';
+      let matchCount = 0;
+
+      parts.forEach(part => {
+        if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+          matchCount++;
+          let className;
+          if (isBlackBackground) {
+            className = (matchCount % 2 === 1) 
+              ? 'highlight-asterisk-gold-alt1' 
+              : 'highlight-asterisk-gold-alt2';
+          } else {
+            className = (matchCount % 2 === 1) 
+              ? 'highlight-asterisk-alt1' 
+              : 'highlight-asterisk-alt2';
+          }
+          result += `<span class="${className}">${part}</span>`;
+        } else {
+          // Escapa HTML para evitar injeção acidental
+          result += part.replace(/&/g, '&amp;')
+                        .replace(/</g, '<')
+                        .replace(/>/g, '>');
+        }
+      });
+
+      contentElement.innerHTML = result;
+    }
+	function startAutoAdvanceWithDelay(delay) {
+  if (!requireAuth()) return;
+  lastAutoAdvanceDelay = delay;
+  autoAdvanceDelay = delay;
+  isAutoAdvanceActive = true;
+  isAutoAdvancePaused = false;
+  autoAdvanceSeconds = autoAdvanceDelay;
+  updateAutoAdvanceDisplay();
+  updateAutoAdvanceUI(); // ← Mostra os botões de controle
+  autoAdvanceInterval = setInterval(() => {
+    if (isAutoAdvancePaused) return;
+    autoAdvanceSeconds--;
+    updateAutoAdvanceDisplay();
+    if (autoAdvanceSeconds <= 0) {
+      reviewAndAdvance();
+      autoAdvanceSeconds = autoAdvanceDelay;
+      updateAutoAdvanceDisplay();
+    }
+  }, 1000);
+}
+
+function pauseAutoAdvance() {
+  if (!isAutoAdvanceActive || isAutoAdvancePaused) return;
+  isAutoAdvancePaused = true;
+  clearInterval(autoAdvanceInterval);
+  document.getElementById('pauseResumeBtn').textContent = "▶️";
+  autoAdvanceTimerDisplay.textContent = `${autoAdvanceSeconds}s`;
+  autoAdvanceTimerDisplay.style.color = "#FFD700"; // Amarelo ao pausar
+}
+
+function resumeAutoAdvance() {
+  if (!isAutoAdvanceActive || !isAutoAdvancePaused) return;
+  isAutoAdvancePaused = false;
+  autoAdvanceInterval = setInterval(() => {
+    if (isAutoAdvancePaused) return;
+    autoAdvanceSeconds--;
+    updateAutoAdvanceDisplay();
+    if (autoAdvanceSeconds <= 0) {
+      reviewAndAdvance();
+      autoAdvanceSeconds = autoAdvanceDelay;
+      updateAutoAdvanceDisplay();
+    }
+  }, 1000);
+  document.getElementById('pauseResumeBtn').textContent = "⏸️";
+  updateAutoAdvanceDisplay();
+  autoAdvanceTimerDisplay.style.color = "white"; // Volta à cor normal
+}
+
+function resetAutoAdvanceTimer() {
+  if (!isAutoAdvanceActive) return;
+  autoAdvanceSeconds = autoAdvanceDelay;
+  updateAutoAdvanceDisplay();
+  if (isAutoAdvancePaused) {
+    resumeAutoAdvance();
+    pauseAutoAdvance(); // Mantém pausado, mas reseta o tempo
+  }
+}
+
+document.getElementById('autoAdvanceButton').addEventListener('mouseleave', () => {
+  clearTimeout(longPressTimer);
+});
+
+function showFeedback(message, color = "gold") {
+  const feedback = document.createElement('div');
+  feedback.textContent = message;
+  feedback.style.position = 'fixed';
+  feedback.style.top = '50%';
+  feedback.style.left = '50%';
+  feedback.style.transform = 'translate(-50%, -50%)';
+  feedback.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+  feedback.style.color = color;
+  feedback.style.padding = '10px 20px';
+  feedback.style.borderRadius = '8px';
+  feedback.style.zIndex = '10002';
+  feedback.style.fontSize = '1.2em';
+  feedback.style.pointerEvents = 'none';
+  document.body.appendChild(feedback);
+  setTimeout(() => document.body.removeChild(feedback), 1500);
+}
+// Função principal para iniciar o temporizador com o último tempo usado
+function startAutoAdvanceSmart() {
+  if (!requireAuth()) return;
+  if (lastAutoAdvanceDelay > 0) {
+    startAutoAdvanceWithDelay(lastAutoAdvanceDelay);
+  } else {
+    openAutoAdvanceSettings();
+  }
+}
+
+// Alternar entre pausar e continuar
+function pauseOrResumeAutoAdvance() {
+  if (!isAutoAdvanceActive) return;
+  if (isAutoAdvancePaused) {
+    resumeAutoAdvance();
+    document.getElementById('pauseResumeBtn').textContent = '⏸️';
+  } else {
+    pauseAutoAdvance();
+    document.getElementById('pauseResumeBtn').textContent = '▶️';
+  }
+}
+
+// Abrir o modal de configuração (sem parar tudo)
+function openAutoAdvanceSettings() {
+  if (!requireAuth()) return;
+  if (isAutoAdvanceActive) {
+    pauseOrResumeAutoAdvance(); // Pausa antes de configurar
+  }
+  document.getElementById("autoAdvanceDelayInput").value = lastAutoAdvanceDelay || autoAdvanceDelay;
+  document.getElementById("autoAdvanceSetup").style.display = "flex";
+  document.getElementById("autoAdvanceOverlay").style.display = "block";
+}
+
+// Atualiza a visibilidade dos botões (INICIAR vs CONTROLE)
+function updateAutoAdvanceUI() {
+  const startBtn = document.getElementById('autoAdvanceStartBtn');
+  const activeGroup = document.getElementById('autoAdvanceActiveGroup');
+  if (isAutoAdvanceActive) {
+    startBtn.style.display = 'none';
+    activeGroup.style.display = 'flex';
+  } else {
+    startBtn.style.display = 'inline-block';
+    activeGroup.style.display = 'none';
+  }
+}
+// --- FUNÇÕES PARA O NOVO MODAL DE CONFIGURAÇÕES ---
+
+    // Abre a janela de configurações
+    function openSettingsModal() {
+      if (!isAuthenticated) {
+        document.getElementById('loginModal').style.display = 'flex';
+        return;
+      }
+      document.getElementById('settingsModal').style.display = 'flex';
+      // Aciona o carregamento para o modo padrão (simulado)
+      switchStudyMode('simulado');
+    }
+
+    // Fecha a janela de configurações
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').style.display = 'none';
+    }
+
+    // Alterna a exibição das opções entre "Simulado" e "Provas"
+   // Alterna a exibição das opções e CARREGA as disciplinas (VERSÃO ATUALIZADA)
+    async function switchStudyMode(mode) {
+      document.getElementById('simuladoOptions').style.display = (mode === 'simulado') ? 'block' : 'none';
+      document.getElementById('provasOptions').style.display = (mode === 'provas') ? 'block' : 'none';
+
+      // Mostra o loading e desativa o botão Iniciar
+      const loadingIndicator = document.getElementById('simuladoLoading');
+      const startButton = document.getElementById('startStudyBtn');
+      
+      if (mode === 'simulado') {
+        loadingIndicator.style.display = 'block';
+        startButton.disabled = true;
+        
+        const simuladoSheetId = '1nWSpTSsMVpueMgd4IjSvSJuZ_I-B5lbvO2RpbWmVHK4';
+        
+        // Carrega os cards da planilha de simulado
+        loadedSettingsCards = await loadFlashcardsFromGoogleSheet(simuladoSheetId, '0');
+        
+        // Preenche as opções de disciplina
+        populateDisciplineDropdowns(loadedSettingsCards);
+        
+        loadingIndicator.style.display = 'none';
+        startButton.disabled = false;
+      } else {
+          // Se for modo provas, apenas reseta
+          loadedSettingsCards = [];
+      }
+    }
+
+    // Função principal que inicia o estudo com base nas configurações escolhidas
+   // Função principal que inicia o estudo com base nas configurações escolhidas (VERSÃO ATUALIZADA)
+    // Função principal que inicia o estudo (VERSÃO ATUALIZADA E SIMPLIFICADA)
+    async function startCustomStudy() {
+      const studyMode = document.querySelector('input[name="studyMode"]:checked').value;
+      
+      closeSettingsModal();
+      showLoadingIndicator(`Iniciando ${studyMode}...`);
+      
+      try {
+        initialCards = [...loadedSettingsCards]; // Usa os cards pré-carregados
+        
+        if (studyMode === 'simulado') {
+          const config = [];
+          const rows = document.querySelectorAll('#simuladoDisciplineInputs .discipline-row');
+          rows.forEach(row => {
+            const disciplina = row.querySelector('.discipline-select').value;
+            const quantidade = parseInt(row.querySelector('.quantity-input').value);
+            if (disciplina && quantidade > 0) {
+              config.push({ disciplina, quantidade });
+            }
+          });
+          cards = generateCustomDeck(initialCards, config);
+        } else { // Modo Provas
+          // Se o modo provas for selecionado, precisamos carregar a planilha dele agora
+          const provasSheetId = '1-57oTvQcOwji13UzcjEOqrw-2zg6WC7P7YVz1A9x1IE';
+          initialCards = await loadFlashcardsFromGoogleSheet(provasSheetId, '0');
+
+          const selectedYear = document.getElementById('provasAno').value;
+          if (selectedYear !== 'todos') {
+            cards = initialCards.filter(card => card.category === selectedYear);
+          } else {
+            cards = [...initialCards];
+          }
+        }
+        
+        if (cards.length === 0) {
+          document.getElementById("flashcard-content").textContent = "Nenhum card encontrado para os critérios selecionados.";
+          cardCounter.textContent = "0/0";
+        } else {
+          currentCard = 0;
+          showingFront = true;
+          isFinished = false;
+          cards.sort(() => Math.random() - 0.5);
+          updateCard();
+          saveFlashcardState();
+        }
+      } catch (error) {
+        console.error("Erro ao iniciar estudo customizado:", error);
+        document.getElementById("flashcard-content").textContent = "Falha ao carregar os cards. Tente novamente.";
+      } finally {
+        hideLoadingIndicator();
+      }
+    }
+	// --- NOVAS FUNÇÕES PARA GERENCIAR O SIMULADO ---
+
+    // Adiciona uma nova linha para selecionar disciplina e quantidade
+    function addDisciplineRow() {
+      const container = document.getElementById('simuladoDisciplineInputs');
+      const firstRow = container.querySelector('.discipline-row');
+      const newRow = firstRow.cloneNode(true); // Clona a primeira linha
+      
+      // Limpa os valores do clone
+      newRow.querySelector('.discipline-select').selectedIndex = 0;
+      newRow.querySelector('.quantity-input').value = '';
+      
+      container.appendChild(newRow);
+    }
+
+    // Preenche as listas de seleção com as disciplinas encontradas na planilha
+    function populateDisciplineDropdowns(allCards) {
+      const disciplines = [...new Set(allCards.map(card => card.disciplina))].sort();
+      const selects = document.querySelectorAll('.discipline-select');
+      
+      selects.forEach(select => {
+        // Guarda a opção selecionada, se houver
+        const selectedValue = select.value;
+        // Limpa opções antigas, exceto a primeira ("Selecione...")
+        while (select.options.length > 1) {
+          select.remove(1);
+        }
+        // Adiciona as novas disciplinas
+        disciplines.forEach(disc => {
+          const option = document.createElement('option');
+          option.value = disc;
+          option.textContent = disc;
+          select.appendChild(option);
+        });
+        // Restaura a seleção anterior
+        select.value = selectedValue;
+      });
+    }
+
+    // Atualiza o contador de total de questões
+    function updateTotalQuestions() {
+      let total = 0;
+      const inputs = document.querySelectorAll('#simuladoDisciplineInputs .quantity-input');
+      inputs.forEach(input => {
+        total += parseInt(input.value) || 0;
+      });
+      document.getElementById('totalSimuladoQuestions').textContent = total;
+    }
+
+    // Gera o baralho customizado com base na seleção do usuário
+    function generateCustomDeck(allCards, config) {
+      let finalDeck = [];
+      
+      // Agrupa todos os cards por disciplina
+      const cardsByDiscipline = allCards.reduce((acc, card) => {
+        if (!acc[card.disciplina]) {
+          acc[card.disciplina] = [];
+        }
+        acc[card.disciplina].push(card);
+        return acc;
+      }, {});
+
+      // Para cada configuração do usuário (ex: Português, 10 questões)
+      config.forEach(item => {
+        const disciplineCards = cardsByDiscipline[item.disciplina];
+        if (!disciplineCards) return;
+
+        // Cria uma "piscina" de sorteio ponderada pelo peso
+        let weightedPool = [];
+        disciplineCards.forEach(card => {
+          for (let i = 0; i < card.peso; i++) {
+            weightedPool.push(card);
+          }
+        });
+        
+        // Embaralha a piscina ponderada
+        for (let i = weightedPool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [weightedPool[i], weightedPool[j]] = [weightedPool[j], weightedPool[i]];
+        }
+
+        // Seleciona o número de cards desejado, sem duplicatas
+        const selectedForDiscipline = new Set();
+        for(const card of weightedPool) {
+            if (selectedForDiscipline.size < item.quantidade) {
+                selectedForDiscipline.add(card);
+            } else {
+                break;
+            }
+        }
+        finalDeck.push(...Array.from(selectedForDiscipline));
+      });
+
+      return finalDeck;
+    }
+ </script>
+   <!-- Código para prevenir rolagem para fora do container -->
+  <script>
+    // Previne que o scroll do container afete a página do Google Sites
+    document.addEventListener('DOMContentLoaded', function() {
+      const cardContainer = document.getElementById('card-container');
+      
+      if (cardContainer) {
+        // Adiciona evento para quando o mouse entra no container
+        cardContainer.addEventListener('mouseenter', function() {
+          this.dataset.scrollLocked = 'true';
+        });
+        
+        // Adiciona evento para quando o mouse sai do container
+        cardContainer.addEventListener('mouseleave', function() {
+          delete this.dataset.scrollLocked;
+        });
+        
+        // Previne o scroll da página pai quando atinge os limites do container
+        cardContainer.addEventListener('wheel', function(e) {
+          if (this.scrollHeight <= this.clientHeight) return;
+          
+          const atTop = this.scrollTop === 0;
+          const atBottom = this.scrollTop + this.clientHeight >= this.scrollHeight - 1;
+          
+          if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+        
+        // Previne touch scroll na página pai quando atinge os limites
+        cardContainer.addEventListener('touchstart', function(e) {
+          this.startY = e.touches[0].clientY;
+        });
+        
+        cardContainer.addEventListener('touchmove', function(e) {
+          if (!this.startY) return;
+          
+          const deltaY = e.touches[0].clientY - this.startY;
+          const atTop = this.scrollTop === 0;
+          const atBottom = this.scrollTop + this.clientHeight >= this.scrollHeight - 1;
+          
+          if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+            e.preventDefault();
+          }
+          
+          this.startY = e.touches[0].clientY;
+        }, { passive: false });
+      }
+    });
+  </script>
+</body>
+</html>

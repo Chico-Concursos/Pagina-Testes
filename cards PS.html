@@ -1333,7 +1333,7 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
       cardContainer.style.animation = 'none';
       void cardContainer.offsetWidth;
       cardContainer.style.animation = 'pulseSuccess 2s';
-      openSettingsModal(); // MODIFICADO AQUI
+      await loadFlashcardsFromGoogleSheet(SHEET_ID, GID);
       hideLoadingIndicator();
     } else {
       showLoginError(result.error || 'Erro durante a autenticação.');
@@ -1377,8 +1377,9 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
     document.getElementById("flashcard-content").textContent = "Carregando flashcards...";
     startSessionTimer();
     showLoadingIndicator();
-    openSettingsModal(); // MODIFICADO AQUI
-    hideLoadingIndicator(); // MODIFICADO AQUI
+loadFlashcardsFromGoogleSheet(SHEET_ID, GID).then(() => {
+      hideLoadingIndicator();
+    });
   } else {
     document.getElementById('loginModal').style.display = 'flex';
   }
@@ -1576,12 +1577,19 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
                 let rawBackText = cols[1];
                 let frontText = (rawFrontText || '').trim();
                 let backText = (rawBackText || '').trim();
-
-                // Coluna 6 (índice 5) é o Peso
-                let peso = parseInt(cols[5]) || 1;
+// Coluna 3 (índice 2) é Categoria
+                // Coluna 4 (índice 3) é Disciplina
+                // Coluna 6 (índice 5) é Peso
+                // Coluna 7 (índice 6) é Ano
+                const categoria = (cols[2] || "").trim();
+                const disciplina = (cols[3] || "").trim();
+                const peso = parseInt(cols[5]) || 1;
+                const ano = (cols[6] || "").trim();
                 
-                // Agora, o card só é adicionado se tiver uma disciplina
-                loadedCards.push({ front: frontText, back: backText, disciplina: disciplina, peso: peso });
+                // O card só será adicionado se tiver uma categoria e uma disciplina
+                if (categoria && disciplina) {
+                    loadedCards.push({ front: frontText, back: backText, categoria: categoria, disciplina: disciplina, peso: peso, ano: ano });
+                }
             }
         });
 
@@ -1607,6 +1615,7 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
             }
             
             loadStatsFromStorage();
+			openSettingsModal(); // Abre as configurações após carregar
             updateCard();
         }
 		return loadedCards; // MODIFICADO: A função agora retorna os cards
@@ -2567,14 +2576,14 @@ function updateAutoAdvanceUI() {
 // --- FUNÇÕES PARA O NOVO MODAL DE CONFIGURAÇÕES ---
 
     // Abre a janela de configurações
-    function openSettingsModal() {
-      if (!isAuthenticated) {
-        document.getElementById('loginModal').style.display = 'flex';
-        return;
-      }
+   function openSettingsModal() {
+      if (!isAuthenticated || initialCards.length === 0) return;
+      
+      // Preenche as opções de disciplina e ano com base nos cards carregados
+      populateDisciplineDropdowns(initialCards);
+      populateAnoDropdowns(initialCards);
+      
       document.getElementById('settingsModal').style.display = 'flex';
-      // Aciona o carregamento para o modo padrão (simulado)
-      switchStudyMode('simulado');
     }
 
     // Fecha a janela de configurações
@@ -2584,47 +2593,28 @@ function updateAutoAdvanceUI() {
 
     // Alterna a exibição das opções entre "Simulado" e "Provas"
    // Alterna a exibição das opções e CARREGA as disciplinas (VERSÃO ATUALIZADA)
-    async function switchStudyMode(mode) {
+   function switchStudyMode(mode) {
       document.getElementById('simuladoOptions').style.display = (mode === 'simulado') ? 'block' : 'none';
       document.getElementById('provasOptions').style.display = (mode === 'provas') ? 'block' : 'none';
-
-      // Mostra o loading e desativa o botão Iniciar
-      const loadingIndicator = document.getElementById('simuladoLoading');
-      const startButton = document.getElementById('startStudyBtn');
-      
-      if (mode === 'simulado') {
-        loadingIndicator.style.display = 'block';
-        startButton.disabled = true;
-        
-        const simuladoSheetId = '1nWSpTSsMVpueMgd4IjSvSJuZ_I-B5lbvO2RpbWmVHK4';
-        
-        // Carrega os cards da planilha de simulado
-        loadedSettingsCards = await loadFlashcardsFromGoogleSheet(simuladoSheetId, '0');
-        
-        // Preenche as opções de disciplina
-        populateDisciplineDropdowns(loadedSettingsCards);
-        
-        loadingIndicator.style.display = 'none';
-        startButton.disabled = false;
-      } else {
-          // Se for modo provas, apenas reseta
-          loadedSettingsCards = [];
-      }
     }
 
     // Função principal que inicia o estudo com base nas configurações escolhidas
    // Função principal que inicia o estudo com base nas configurações escolhidas (VERSÃO ATUALIZADA)
     // Função principal que inicia o estudo (VERSÃO ATUALIZADA E SIMPLIFICADA)
-    async function startCustomStudy() {
+     function startCustomStudy() {
       const studyMode = document.querySelector('input[name="studyMode"]:checked').value;
       
       closeSettingsModal();
       showLoadingIndicator(`Iniciando ${studyMode}...`);
       
       try {
-        initialCards = [...loadedSettingsCards]; // Usa os cards pré-carregados
+        let filteredCards = [];
         
         if (studyMode === 'simulado') {
+          // 1. Filtra apenas os cards da categoria "Simulado"
+          const simuladoPool = initialCards.filter(card => card.categoria === 'Simulado');
+          
+          // 2. Coleta a configuração do usuário
           const config = [];
           const rows = document.querySelectorAll('#simuladoDisciplineInputs .discipline-row');
           rows.forEach(row => {
@@ -2634,17 +2624,20 @@ function updateAutoAdvanceUI() {
               config.push({ disciplina, quantidade });
             }
           });
-          cards = generateCustomDeck(initialCards, config);
-        } else { // Modo Provas
-          // Se o modo provas for selecionado, precisamos carregar a planilha dele agora
-          const provasSheetId = '1-57oTvQcOwji13UzcjEOqrw-2zg6WC7P7YVz1A9x1IE';
-          initialCards = await loadFlashcardsFromGoogleSheet(provasSheetId, '0');
+          
+          // 3. Gera o baralho customizado a partir do pool filtrado
+          cards = generateCustomDeck(simuladoPool, config);
 
+        } else { // Modo Provas
+          // 1. Filtra apenas os cards da categoria "Prova"
+          filteredCards = initialCards.filter(card => card.categoria === 'Prova');
+          
+          // 2. Aplica o filtro de ano
           const selectedYear = document.getElementById('provasAno').value;
           if (selectedYear !== 'todos') {
-            cards = initialCards.filter(card => card.category === selectedYear);
+            cards = filteredCards.filter(card => card.ano === selectedYear);
           } else {
-            cards = [...initialCards];
+            cards = filteredCards; // Usa todos os cards de prova
           }
         }
         
@@ -2655,7 +2648,7 @@ function updateAutoAdvanceUI() {
           currentCard = 0;
           showingFront = true;
           isFinished = false;
-          cards.sort(() => Math.random() - 0.5);
+          cards.sort(() => Math.random() - 0.5); // Embaralha o resultado
           updateCard();
           saveFlashcardState();
         }
@@ -2760,6 +2753,25 @@ function updateAutoAdvanceUI() {
       });
 
       return finalDeck;
+    }
+	// Preenche a lista de seleção com os anos encontrados na planilha de provas
+    function populateAnoDropdowns(allCards) {
+      // Pega apenas os anos únicos dos cards de "Prova" e remove valores vazios
+      const anos = [...new Set(allCards.filter(c => c.categoria === 'Prova' && c.ano).map(card => card.ano))].sort((a, b) => b - a); // Ordena do mais novo para o mais antigo
+      const select = document.getElementById('provasAno');
+      
+      // Limpa opções antigas, exceto a primeira ("Todos os Anos")
+      while (select.options.length > 1) {
+        select.remove(1);
+      }
+      
+      // Adiciona os novos anos
+      anos.forEach(ano => {
+        const option = document.createElement('option');
+        option.value = ano;
+        option.textContent = ano;
+        select.appendChild(option);
+      });
     }
  </script>
    <!-- Código para prevenir rolagem para fora do container -->

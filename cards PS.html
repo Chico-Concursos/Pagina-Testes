@@ -1034,7 +1034,23 @@
         <button class="add-discipline-button" onclick="addDisciplineRow()">+ Adicionar Disciplina</button>
         <p class="total-questions-display">Total de Questões: <span id="totalSimuladoQuestions">0</span></p>
       </div>
-
+ <!-- INÍCIO DA NOVA SEÇÃO DE FILTRO DE PESO -->
+      <div class="settings-section">
+        <h3>3. Filtro de Peso</h3>
+        <div class="mode-selection">
+          <label>
+            <input type="radio" name="weightMode" value="ponderado" checked onchange="switchWeightMode(this.value)"> Aleatório Ponderado
+          </label>
+          <label>
+            <input type="radio" name="weightMode" value="minimo" onchange="switchWeightMode(this.value)"> Peso Mínimo
+          </label>
+        </div>
+        <div id="pesoMinimoOptions" style="display: none; margin-top: 10px;">
+          <label for="pesoMinimoValue">Mostrar questões com peso ≥ a:</label>
+          <input type="number" id="pesoMinimoValue" class="quantity-input" min="1" value="1" style="width: 70px;">
+        </div>
+      </div>
+      <!-- FIM DA NOVA SEÇÃO -->
       <div class="settings-actions">
         <button id="startStudyBtn" class="start-button" onclick="startCustomStudy()">Iniciar Estudo</button> <!-- ID ADICIONADO AQUI -->
         <button class="close-button" onclick="closeSettingsModal()">Fechar</button>
@@ -1531,101 +1547,106 @@ loadFlashcardsFromGoogleSheet(SHEET_ID, GID).then(() => {
       return false;
     }
 
-    async function loadFlashcardsFromGoogleSheet(sheetId, gid) { // MODIFICADO AQUI
-      if (!isAuthenticated) {
-        document.getElementById("flashcard-content").textContent = "Por favor, faça login para acessar os flashcards.";
-        cardCounter.textContent = "0/0";
-        return;
-      }
-      
-      if (isSessionExpired()) {
-        expireSession();
-        return;
-      }
-      
-      const csvUrl = buildGoogleSheetCsvUrl(sheetId, gid); // MODIFICADO AQUI
-      if (!csvUrl) {
-          document.getElementById("flashcard-content").textContent = "Erro: 'sheetId' não foi fornecido nos parâmetros da URL.";
-          cardCounter.textContent = "0/0";
-          return;
-      }
-      
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        const response = await fetch(csvUrl, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Erro HTTP! Status: ${response.status}. Detalhes: ${errorText.substring(0, 200)}...`);
-        }
-        
-        const text = await response.text();
-        const lines = splitCSVRecords(text).slice(1).filter(line => line.trim() !== "");
-
-        let loadedCards = [];
-        lines.forEach(line => {
-            const cols = parseCSVLine(line);
-            
-            // MODIFICAÇÃO: Primeiro, verificamos se a coluna da disciplina (índice 3) existe e não está vazia
-            const disciplina = (cols[3] || "").trim();
-
-            // O card só será processado se tiver uma disciplina válida e pelo menos as duas primeiras colunas
-            if (disciplina && cols.length >= 2) { 
-                let rawFrontText = cols[0];
-                let rawBackText = cols[1];
-                let frontText = (rawFrontText || '').trim();
-                let backText = (rawBackText || '').trim();
-// Coluna 3 (índice 2) é Categoria
-                // Coluna 4 (índice 3) é Disciplina
-                // Coluna 6 (índice 5) é Peso
-                // Coluna 7 (índice 6) é Ano
-                const categoria = (cols[2] || "").trim();
-                const disciplina = (cols[3] || "").trim();
-                const peso = parseInt(cols[5]) || 1;
-                const ano = (cols[6] || "").trim();
-                
-                // O card só será adicionado se tiver uma categoria e uma disciplina
-                if (categoria && disciplina) {
-                    loadedCards.push({ front: frontText, back: backText, categoria: categoria, disciplina: disciplina, peso: peso, ano: ano });
-                }
-            }
-        });
-
-        if (loadedCards.length === 0) {
-            document.getElementById("flashcard-content").textContent = "Nenhum flashcard encontrado na planilha.";
-            cardCounter.textContent = "0/0";
-        } else {
-            initialCards = loadedCards;
-            cards = [...initialCards];
-            categories = ["Todas", ...new Set(loadedCards.map(card => card.category))];
-            const categorySelect = document.getElementById("categoryFilter");
-            categorySelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-            
-            const hasSavedState = loadFlashcardState();
-            if (!hasSavedState) {
-              currentCard = 0;
-              showingFront = true;
-              currentCategory = "Todas";
-              cardAccuracy = {};
-              isReviewErrorsMode = false;
-            } else {
-              filterByCategory(currentCategory, true);
-            }
-            
-            loadStatsFromStorage();
-			openSettingsModal(); // Abre as configurações após carregar
-            updateCard();
-        }
-		return loadedCards; // MODIFICADO: A função agora retorna os cards
-      } catch (error) {
-          console.error("Erro ao carregar os flashcards:", error);
-          document.getElementById("flashcard-content").textContent = `Erro ao carregar flashcards: ${error.message}`;
-          cardCounter.textContent = "0/0";
-		  return []; // Em caso de erro, retorna uma lista vazia
-      }
+    async function loadFlashcardsFromGoogleSheet(sheetId, gid) {
+  if (!isAuthenticated) {
+    document.getElementById("flashcard-content").textContent = "Por favor, faça login para acessar os flashcards.";
+    cardCounter.textContent = "0/0";
+    return;
+  }
+  
+  if (isSessionExpired()) {
+    expireSession();
+    return;
+  }
+  
+  const csvUrl = buildGoogleSheetCsvUrl(sheetId, gid);
+  if (!csvUrl) {
+      document.getElementById("flashcard-content").textContent = "Erro: 'sheetId' não foi fornecido nos parâmetros da URL.";
+      cardCounter.textContent = "0/0";
+      return;
+  }
+  
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(csvUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erro HTTP! Status: ${response.status}. Detalhes: ${errorText.substring(0, 200)}...`);
     }
+    
+    const text = await response.text();
+    const lines = splitCSVRecords(text).slice(1).filter(line => line.trim() !== "");
+
+    let loadedCards = [];
+    lines.forEach(line => {
+        const cols = parseCSVLine(line);
+        
+        // Requisitos mínimos: a linha deve ter pelo menos pergunta (col 0) e resposta (col 1)
+        if (cols.length < 2) return;
+
+        const frontText = (cols[0] || '').trim();
+        const backText = (cols[1] || '').trim();
+        
+        // Ignora o card se a pergunta ou a resposta estiverem vazias
+        if (!frontText || !backText) return;
+
+      // --- BLOCO DE LEITURA ATUALIZADO E BLINDADO ---
+        // Mapeamento: Col C(2):Categoria | Col D(3):Disciplina | Col F(5):Peso | Col G(6):Tipo | Col H(7):Ano
+        const categoria = (cols[4] || "").trim();
+        const disciplina = (cols[3] || "").trim();
+        const peso = parseInt(cols[5]) || 1;
+        
+        // Lê o tipo, remove espaços e força minúsculo. Se vazio, assume 'simulado'.
+        let tipoRaw = (cols[6] || "").trim().toLowerCase();
+        const tipo = tipoRaw === "" ? 'simulado' : tipoRaw;
+        
+        const ano = (cols[7] || "").trim();
+        // -------------------------------------------------
+
+        // *** A CORREÇÃO ESTÁ AQUI ***
+        // O card só será adicionado se tiver uma DISCIPLINA. A categoria é opcional.
+        if (disciplina) {
+            loadedCards.push({ front: frontText, back: backText, tipo: tipo, categoria: categoria, disciplina: disciplina, peso: peso, ano: ano });
+        }
+    });
+
+    if (loadedCards.length === 0) {
+        document.getElementById("flashcard-content").textContent = "Nenhum flashcard válido foi encontrado na planilha. Verifique se as colunas 'Pergunta', 'Resposta' e 'Disciplina' estão preenchidas.";
+        cardCounter.textContent = "0/0";
+    } else {
+        initialCards = loadedCards;
+        cards = [...initialCards];
+        // Popula o filtro de categorias (tópicos)
+        categories = ["Todas", ...new Set(loadedCards.map(card => card.categoria).filter(c => c))]; // Filtra categorias vazias
+        const categorySelect = document.getElementById("categoryFilter");
+        categorySelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        
+        const hasSavedState = loadFlashcardState();
+        if (!hasSavedState) {
+          currentCard = 0;
+          showingFront = true;
+          currentCategory = "Todas";
+          cardAccuracy = {};
+          isReviewErrorsMode = false;
+        } else {
+          filterByCategory(currentCategory, true);
+        }
+        
+        loadStatsFromStorage();
+		openSettingsModal(); // Abre as configurações após carregar
+        updateCard();
+    }
+	return loadedCards;
+  } catch (error) {
+      console.error("Erro ao carregar os flashcards:", error);
+      document.getElementById("flashcard-content").textContent = `Erro ao carregar flashcards: ${error.message}`;
+      cardCounter.textContent = "0/0";
+	  return [];
+  }
+}
 
     function filterByCategory(category, skipSave = false) {
       if (!requireAuth()) return;
@@ -2590,7 +2611,12 @@ function updateAutoAdvanceUI() {
     function closeSettingsModal() {
       document.getElementById('settingsModal').style.display = 'none';
     }
-
+// INÍCIO DA NOVA FUNÇÃO
+    // Mostra ou oculta as opções de peso mínimo com base na seleção do rádio
+    function switchWeightMode(mode) {
+      document.getElementById('pesoMinimoOptions').style.display = (mode === 'minimo') ? 'block' : 'none';
+    }
+    // FIM DA NOVA FUNÇÃO
     // Alterna a exibição das opções entre "Simulado" e "Provas"
    // Alterna a exibição das opções e CARREGA as disciplinas (VERSÃO ATUALIZADA)
    function switchStudyMode(mode) {
@@ -2601,64 +2627,75 @@ function updateAutoAdvanceUI() {
     // Função principal que inicia o estudo com base nas configurações escolhidas
    // Função principal que inicia o estudo com base nas configurações escolhidas (VERSÃO ATUALIZADA)
     // Função principal que inicia o estudo (VERSÃO ATUALIZADA E SIMPLIFICADA)
-     function startCustomStudy() {
-      const studyMode = document.querySelector('input[name="studyMode"]:checked').value;
+    // Função principal que inicia o estudo (VERSÃO ATUALIZADA E SIMPLIFICADA)
+function startCustomStudy() {
+  const studyMode = document.querySelector('input[name="studyMode"]:checked').value;
+  
+  closeSettingsModal();
+  showLoadingIndicator(`Iniciando ${studyMode}...`);
+  
+  try {
+    let filteredCards = [];
+    
+    if (studyMode === 'simulado') {
+      // 1. Filtra os cards: Aceita TUDO que não for explicitamente uma "prova"
+      // Isso garante que células vazias ou com nomes diferentes entrem no simulado.
+      const simuladoPool = initialCards.filter(card => !card.tipo.includes('prova'));
       
-      closeSettingsModal();
-      showLoadingIndicator(`Iniciando ${studyMode}...`);
+      // 2. Coleta a configuração do usuário
+      const config = [];
+      const rows = document.querySelectorAll('#simuladoDisciplineInputs .discipline-row');
+      rows.forEach(row => {
+        const disciplina = row.querySelector('.discipline-select').value;
+        const quantidade = parseInt(row.querySelector('.quantity-input').value);
+        if (disciplina && quantidade > 0) {
+          config.push({ disciplina, quantidade });
+        }
+      });
       
-      try {
-        let filteredCards = [];
-        
-        if (studyMode === 'simulado') {
-          // 1. Filtra apenas os cards da categoria "Simulado"
-          const simuladoPool = initialCards.filter(card => card.categoria === 'Simulado');
-          
-          // 2. Coleta a configuração do usuário
-          const config = [];
-          const rows = document.querySelectorAll('#simuladoDisciplineInputs .discipline-row');
-          rows.forEach(row => {
-            const disciplina = row.querySelector('.discipline-select').value;
-            const quantidade = parseInt(row.querySelector('.quantity-input').value);
-            if (disciplina && quantidade > 0) {
-              config.push({ disciplina, quantidade });
-            }
-          });
-          
-          // 3. Gera o baralho customizado a partir do pool filtrado
-          cards = generateCustomDeck(simuladoPool, config);
+      // 3. Gera o baralho customizado a partir do pool filtrado
+      cards = generateCustomDeck(simuladoPool, config);
 
-        } else { // Modo Provas
-          // 1. Filtra apenas os cards da categoria "Prova"
-          filteredCards = initialCards.filter(card => card.categoria === 'Prova');
-          
-          // 2. Aplica o filtro de ano
-          const selectedYear = document.getElementById('provasAno').value;
-          if (selectedYear !== 'todos') {
-            cards = filteredCards.filter(card => card.ano === selectedYear);
-          } else {
-            cards = filteredCards; // Usa todos os cards de prova
-          }
-        }
-        
-        if (cards.length === 0) {
-          document.getElementById("flashcard-content").textContent = "Nenhum card encontrado para os critérios selecionados.";
-          cardCounter.textContent = "0/0";
-        } else {
-          currentCard = 0;
-          showingFront = true;
-          isFinished = false;
-          cards.sort(() => Math.random() - 0.5); // Embaralha o resultado
-          updateCard();
-          saveFlashcardState();
-        }
-      } catch (error) {
-        console.error("Erro ao iniciar estudo customizado:", error);
-        document.getElementById("flashcard-content").textContent = "Falha ao carregar os cards. Tente novamente.";
-      } finally {
-        hideLoadingIndicator();
+    } else { // Modo Provas
+      // 1. Filtra os cards com base na nova coluna "Tipo"
+      filteredCards = initialCards.filter(card => card.tipo === 'Prova');
+      
+      // 2. Aplica o filtro de ano
+      const selectedYear = document.getElementById('provasAno').value;
+      if (selectedYear !== 'todos') {
+        cards = filteredCards.filter(card => card.ano === selectedYear);
+      } else {
+        cards = filteredCards; // Usa todos os cards de prova
       }
     }
+
+    // --- INÍCIO DA LÓGICA DO FILTRO DE PESO ADICIONADA ---
+    const weightMode = document.querySelector('input[name="weightMode"]:checked').value;
+    if (weightMode === 'minimo') {
+      const minWeight = parseInt(document.getElementById('pesoMinimoValue').value) || 1;
+      cards = cards.filter(card => card.peso >= minWeight);
+    }
+    // Se for 'ponderado', a função generateCustomDeck já cuida disso para simulados.
+    // --- FIM DA LÓGICA DO FILTRO DE PESO ---
+    
+    if (cards.length === 0) {
+      document.getElementById("flashcard-content").textContent = "Nenhum card encontrado para os critérios selecionados.";
+      cardCounter.textContent = "0/0";
+    } else {
+      currentCard = 0;
+      showingFront = true;
+      isFinished = false;
+      cards.sort(() => Math.random() - 0.5); // Embaralha o resultado
+      updateCard();
+      saveFlashcardState();
+    }
+  } catch (error) {
+    console.error("Erro ao iniciar estudo customizado:", error);
+    document.getElementById("flashcard-content").textContent = "Falha ao carregar os cards. Tente novamente.";
+  } finally {
+    hideLoadingIndicator();
+  }
+}
 	// --- NOVAS FUNÇÕES PARA GERENCIAR O SIMULADO ---
 
     // Adiciona uma nova linha para selecionar disciplina e quantidade
@@ -2757,7 +2794,7 @@ function updateAutoAdvanceUI() {
 	// Preenche a lista de seleção com os anos encontrados na planilha de provas
     function populateAnoDropdowns(allCards) {
       // Pega apenas os anos únicos dos cards de "Prova" e remove valores vazios
-      const anos = [...new Set(allCards.filter(c => c.categoria === 'Prova' && c.ano).map(card => card.ano))].sort((a, b) => b - a); // Ordena do mais novo para o mais antigo
+      const anos = [...new Set(allCards.filter(c => c.tipo === 'Prova' && c.ano).map(card => card.ano))].sort((a, b) => b - a); // Ordena do mais novo para o mais antigo
       const select = document.getElementById('provasAno');
       
       // Limpa opções antigas, exceto a primeira ("Todos os Anos")

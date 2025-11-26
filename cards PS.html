@@ -1893,8 +1893,12 @@ loadFlashcardsFromGoogleSheet(SHEET_ID, GID).then(() => {
             // Col C (Índice 2) = FOCO
             const foco = (cols[2] || "").trim(); 
             
-            // Col D (Índice 3) = DISCIPLINA
-            const disciplina = (cols[3] || "").trim();
+            // Col D (Índice 3) = DISCIPLINA (Com regra de Default "Geral")
+            let disciplina = (cols[3] || "").trim();
+            
+            if (disciplina === "") {
+                disciplina = "Geral";
+            }
             
             // Col E (Índice 4) = TÓPICO (Antiga categoria)
             const topico = (cols[4] || "").trim();
@@ -1907,22 +1911,18 @@ loadFlashcardsFromGoogleSheet(SHEET_ID, GID).then(() => {
             const ano = (cols[7] || "").trim();
             // -------------------------------------
 
-            // O card é adicionado se tiver Disciplina
-            if (disciplina) {
-                // Note que agora salvamos 'topico' e 'foco' separadamente
-                // Mantemos 'categoria' apontando para topico para compatibilidade com o filtro
-                loadedCards.push({ 
-                    front: frontText, 
-                    back: backText, 
-                    tipo: tipo, 
-                    categoria: topico, // O filtro usa isso
-                    topico: topico,    // Nome correto
-                    foco: foco,        // Nome correto (Col C)
-                    disciplina: disciplina, 
-                    peso: peso, 
-                    ano: ano 
-                });
-            }
+            // Adiciona o card (Sem restrição de disciplina vazia)
+            loadedCards.push({ 
+                front: frontText, 
+                back: backText, 
+                tipo: tipo, 
+                categoria: topico, // O filtro usa isso
+                topico: topico,    // Nome correto
+                foco: foco,        // Nome correto (Col C)
+                disciplina: disciplina, 
+                peso: peso, 
+                ano: ano 
+            });
         });
 
         if (loadedCards.length === 0) {
@@ -1933,7 +1933,7 @@ loadFlashcardsFromGoogleSheet(SHEET_ID, GID).then(() => {
             cards = [...initialCards];
             const hasSavedState = loadFlashcardState();
             
-            // CORREÇÃO: Forçamos o reset para evitar buscar menus que não existem mais
+            // Reset forçado para garantir limpeza
             currentCategory = "Todas";
             cards = [...initialCards];
             
@@ -1944,17 +1944,13 @@ loadFlashcardsFromGoogleSheet(SHEET_ID, GID).then(() => {
               cardAccuracy = {};
               isReviewErrorsMode = false;
             }
-            // Removemos o 'else' que chamava o filtro antigo
             
             loadStatsFromStorage();
             
-            // ALTERAÇÃO: Em vez de abrir o modal, destacamos o botão por 10s
-            // openSettingsModal(); <--- (Linha removida/comentada)
-            
+            // Destaque visual no botão de configuração
             const btn = document.getElementById("settingsBtn");
             if (btn) {
                 btn.classList.add("settings-highlight");
-                // Remove o destaque após 10 segundos (10000ms)
                 setTimeout(() => {
                     btn.classList.remove("settings-highlight");
                 }, 10000);

@@ -1627,6 +1627,14 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
     if (result.success) {
       userEmail = email;
       userAllowedCourses = result.allowedCourses || []; // Armazena a lista de cursos permitidos vinda do App Script
+
+      // Verifica se o usuário tem permissão para acessar ESTA planilha específica
+      if (SHEET_ID && userAllowedCourses.length > 0 && !userAllowedCourses.includes(SHEET_ID)) {
+        showLoginError('Você não possui acesso a este curso.');
+        setLoginButtonLoading(false);
+        return; // Interrompe o login
+      }
+
       // Se passou pela verificação, prossegue com o login normal
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', userEmail);
@@ -1669,6 +1677,15 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
     // Carrega os cursos permitidos do localStorage
     const savedAllowedCourses = localStorage.getItem('userAllowedCourses');
     userAllowedCourses = savedAllowedCourses ? JSON.parse(savedAllowedCourses) : [];
+
+    // Verifica permissão antes de carregar os flashcards
+    if (SHEET_ID && userAllowedCourses.length > 0 && !userAllowedCourses.includes(SHEET_ID)) {
+      document.getElementById("flashcard-content").textContent = "Você não possui acesso a este curso.";
+      cardCounter.textContent = "0/0";
+      document.getElementById('loginModal').style.display = 'flex'; // Mostra o modal de login novamente
+      return;
+    }
+
     document.getElementById('loginModal').style.display = 'none';
     document.getElementById("flashcard-content").textContent = "Carregando flashcards...";
     startSessionTimer();

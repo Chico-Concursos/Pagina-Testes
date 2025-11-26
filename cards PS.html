@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Chico Concursos - Flashcards com Progresso</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
@@ -83,6 +83,9 @@
       overflow-y: auto;
       overflow-x: hidden;
       white-space: pre-wrap;
+	  /* --- LINHA NOVA (Adicione isto) --- */
+      overscroll-behavior: contain; 
+      /* Isso impede que a rolagem passe para a página de fundo */
     }
     #flashcard-content {
       text-align: center;
@@ -713,12 +716,18 @@
     #settingsModalContent {
       background: #222;
       color: white;
-      padding: 30px;
+      padding: 20px; /* Reduzi de 30px para 20px para ganhar espaço */
       border-radius: 10px;
       max-width: 600px;
       width: 90%;
       box-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
       text-align: left;
+      
+      /* --- CORREÇÃO DO ESTOURO --- */
+      max-height: 85vh;       /* Ocupa no máximo 85% da altura da tela */
+      overflow-y: auto;       /* Cria barra de rolagem SE precisar */
+      display: flex;          /* Organiza o conteúdo */
+      flex-direction: column; /* Em coluna */
     }
     #settingsModalContent h2 {
       color: gold;
@@ -813,11 +822,200 @@
       font-weight: bold;
       color: gold;
     }
+	/* --- REGRAS EXCLUSIVAS PARA CELULAR --- */
+    /* Estas regras SÓ funcionam se a tela for menor que 768px (Celulares) */
+    /* O computador continuará usando as medidas originais (75vh e 98%) */
+    
+    @media (max-width: 768px) {
+      
+      /* 1. Adaptação do tamanho do container SÓ no celular */
+      #card-container {
+        height: 55vh; /* Reduz a altura para caber com o teclado/barras do navegador */
+        width: 94%;   /* Margem de segurança para não colar na borda */
+      }
+
+      /* 2. Correção do Login cortado (Permite rolar a tela) */
+      #loginModal {
+        align-items: flex-start !important; 
+        overflow-y: auto !important;
+        padding-top: 20px;
+      }
+      
+      .login-container {
+        margin: 10px auto 50px auto;
+        width: 95%;
+      }
+    }
+	/* --- ESTILO DAS CAIXAS DE SELEÇÃO (OPTION CARDS) --- */
+    /* --- ESTILO LIMPO (LISTA) COM TOOLTIP --- */
+    .clean-option-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between; /* Texto na esquerda, ícone na direita */
+      background: #333;
+      padding: 10px 15px;
+      margin-bottom: 8px;
+      border-radius: 5px;
+      border: 1px solid #444;
+    }
+    
+    .clean-option-row:hover {
+      background: #3a3a3a;
+    }
+
+    .clean-option-row label {
+      cursor: pointer;
+      flex-grow: 1; /* Clica na linha toda */
+      display: flex;
+      align-items: center;
+      font-size: 1.1em;
+    }
+
+    .clean-option-row input[type="radio"] {
+      margin-right: 10px;
+      transform: scale(1.2);
+    }
+
+    /* Ícone de Ajuda (?) */
+   /* --- Ícone de Ajuda (?) --- */
+    .info-icon {
+      cursor: help;
+      font-size: 0.9em;
+      color: gold;
+      opacity: 0.8;
+      margin-left: 10px;
+      padding: 2px 7px;
+      border: 1px solid #555;
+      border-radius: 50%;
+      position: relative; /* Necessário para segurar o tooltip */
+      display: inline-block;
+    }
+    
+    .info-icon:hover {
+      opacity: 1;
+      background: rgba(255, 215, 0, 0.1);
+      border-color: gold;
+    }
+
+    /* --- TOOLTIP ROBUSTO (Funciona com Hover e Foco/Clique) --- */
+    .info-icon:hover::after,
+    .info-icon:focus::after {
+      content: attr(data-tooltip); /* O texto vem daqui */
+      
+      /* Visual */
+      background: #222;
+      color: #fff;
+      border: 1px solid gold;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 0.85em;
+      font-weight: normal;
+      line-height: 1.3;
+      text-align: left;
+      white-space: normal; /* Permite quebrar linha */
+      box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+      
+      /* Tamanho e Posição */
+      width: 200px;
+      position: absolute;
+      bottom: 135%; /* Aparece acima do ícone */
+      right: -10px; /* Alinha com a direita */
+      z-index: 10005; /* Garante que fique na frente de tudo */
+      
+      /* Animação suave */
+      opacity: 1;
+      visibility: visible;
+      pointer-events: none; /* O mouse ignora o balão */
+    }
+
+    /* Pequena seta apontando para baixo (Estético) */
+    .info-icon:hover::before,
+    .info-icon:focus::before {
+      content: '';
+      position: absolute;
+      bottom: 100%; /* Logo acima do ícone */
+      right: 6px;   /* Centralizado no ícone */
+      border-width: 6px;
+      border-style: solid;
+      border-color: gold transparent transparent transparent;
+      z-index: 10005;
+    }
+	/* --- ANIMAÇÃO DE FLIP 3D --- */
+    .animate-flip {
+      animation: flip-card-animation 0.4s ease-in-out;
+    }
+
+    @keyframes flip-card-animation {
+      0% {
+        transform: perspective(1000px) rotateY(0deg);
+        opacity: 1;
+      }
+      50% {
+        transform: perspective(1000px) rotateY(90deg);
+        opacity: 0.5;
+      }
+      100% {
+        transform: perspective(1000px) rotateY(0deg);
+        opacity: 1;
+      }
+    }
+	/* --- DESTAQUE TEMPORÁRIO DO BOTÃO DE CONFIG --- */
+    .settings-highlight {
+      background-color: rgba(255, 215, 0, 0.4) !important; /* Fundo Dourado Translúcido */
+      box-shadow: 0 0 15px gold; /* Brilho externo */
+      border-radius: 5px; /* Bordas arredondadas */
+      transition: all 0.5s ease; /* Suavidade */
+    }
+	/* --- ALERTA PERSONALIZADO (Substitui o window.alert) --- */
+    #customAlertModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 20000; /* Maior que tudo para ficar na frente */
+      display: none;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(2px);
+    }
+    .custom-alert-box {
+      background: #111;
+      border: 2px solid #FFD700;
+      padding: 25px;
+      border-radius: 10px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+      animation: popIn 0.3s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .custom-alert-btn {
+      background: linear-gradient(to bottom, #FFD700, #D4AF37);
+      color: black;
+      border: none;
+      padding: 10px 25px;
+      font-size: 1.1em;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+      min-width: 100px;
+    }
+    .custom-alert-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px gold;
+    }
   </style>
 </head>
 <body>
   <div class="top-bar">
-    <button class="tooltip" data-tooltip="Configurações" onclick="openSettingsModal()">⚙️</button> <!-- NOVO BOTÃO ADICIONADO AQUI -->
+    <button id="settingsBtn" class="tooltip" data-tooltip="Configurações" onclick="openSettingsModal()">⚙️</button> <!-- NOVO BOTÃO ADICIONADO AQUI -->
     <button class="tooltip" data-tooltip="Ajuda" onclick="toggleHelpModal()">❓</button>
     <button class="tooltip" data-tooltip="Cor do cartão" onclick="toggleCardColorMenu()">🖌️</button>
     <select id="cardColor" onchange="changeCardColor(this.value)" style="display:none;">
@@ -848,9 +1046,7 @@
     <button class="tooltip" data-tooltip="Estatísticas" onclick="toggleStatsModal()">📈</button>
     <button id="reviewErrorsButton" class="tooltip" data-tooltip="Revisar apenas cards com erro" onclick="toggleReviewErrors()" style="display:none;">🔍</button>
     </button>
-	<select id="categoryFilter" class="tooltip" data-tooltip="Filtrar por categoria" onchange="filterByCategory(this.value)">
-      <option value="Todas">Todas Categorias</option>
-    </select>
+	<button id="filterBtn" class="tooltip" data-tooltip="Filtrar Conteúdo" onclick="openFilterModal()">📂</button>
 	<button class="logout-button" onclick="logout()">
       <i class="fas fa-sign-out-alt"></i> Sair
   </div>
@@ -989,75 +1185,152 @@
   <!-- INÍCIO DO NOVO MODAL DE CONFIGURAÇÕES (COLE AQUI) -->
   <div id="settingsModal" style="display:none;">
     <div id="settingsModalContent">
-      <h2>Configurações de Estudo</h2>
+      <h2 style="margin-top:0; margin-bottom: 15px;">Configurações de Estudo</h2>
       
       <div class="settings-section">
         <h3>1. Escolha o Modo de Estudo</h3>
         <div class="mode-selection">
-          <label>
-            <input type="radio" name="studyMode" value="simulado" checked onchange="switchStudyMode(this.value)"> Simulado
-          </label>
-          <label>
-            <input type="radio" name="studyMode" value="provas" onchange="switchStudyMode(this.value)"> Provas
-          </label>
+          
+          <div class="clean-option-row">
+            <label>
+              <input type="radio" name="studyMode" value="simulado" onchange="switchStudyMode(this.value)"> 
+              Simulado Personalizado
+            </label>
+           <span class="info-icon" tabindex="0" data-tooltip="Você escolhe as disciplinas e a quantidade exata. Ideal para focar.">?</span>
+          </div>
+
+          <div class="clean-option-row">
+            <label>
+              <input type="radio" name="studyMode" value="livre" onchange="switchStudyMode(this.value)"> 
+              Estudo Livre
+            </label>
+           <span class="info-icon" tabindex="0" data-tooltip="Sorteio aleatório de todas as matérias. Você define apenas o total.">?</span>
+          </div>
+
+          <div class="clean-option-row">
+            <label>
+              <input type="radio" name="studyMode" value="provas" onchange="switchStudyMode(this.value)"> 
+              Provas Anteriores
+            </label>
+           <span class="info-icon" tabindex="0" data-tooltip="Refaça provas completas filtradas pelo ano de aplicação.">?</span>
+          </div>
+
         </div>
       </div>
 
-      <!-- Opções para o modo Provas -->
-      <div id="provasOptions" class="settings-section" style="display: none;">
-        <h3>2. Filtro para Provas</h3>
-        <label for="provasAno">Escolha o Ano:</label>
-        <select id="provasAno">
-          <option value="todos">Todos os Anos</option>
-          <!-- Os anos serão preenchidos dinamicamente, mas podemos adicionar alguns como exemplo -->
-          <option value="2023">2023</option>
-          <option value="2022">2022</option>
-          <option value="2021">2021</option>
-        </select>
-      </div>
-
-      <!-- Opções para o modo Simulado (espaço para futuras funcionalidades) -->
-      <!-- Opções para o modo Simulado -->
-      <div id="simuladoOptions" class="settings-section">
+      <div id="simuladoOptions" class="settings-section" style="display: none;">
         <h3>2. Monte seu Simulado</h3>
-		<div id="simuladoLoading" style="display: none; color: gold; margin-bottom: 10px;">Carregando disciplinas...</div> <!-- NOVA LINHA ADICIONADA -->
+        <div id="simuladoLoading" style="display: none; color: gold; margin-bottom: 10px;">Carregando disciplinas...</div>
         <div id="simuladoDisciplineInputs">
-          <!-- Linha de Disciplina (será o modelo para adicionar outras) -->
           <div class="discipline-row">
             <select class="discipline-select" onchange="updateTotalQuestions()">
               <option value="">Selecione a Disciplina</option>
-              <!-- Preenchido via JavaScript -->
             </select>
             <input type="number" class="quantity-input" placeholder="Qtd" min="1" onchange="updateTotalQuestions()" onkeyup="updateTotalQuestions()">
           </div>
         </div>
-        <button class="add-discipline-button" onclick="addDisciplineRow()">+ Adicionar Disciplina</button>
-        <p class="total-questions-display">Total de Questões: <span id="totalSimuladoQuestions">0</span></p>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+            <button class="add-discipline-button" onclick="addDisciplineRow()">+ Disciplina</button>
+            <p class="total-questions-display" style="margin:0;">Total: <span id="totalSimuladoQuestions">0</span></p>
+        </div>
       </div>
- <!-- INÍCIO DA NOVA SEÇÃO DE FILTRO DE PESO -->
+
+      <div id="livreOptions" class="settings-section" style="display: none;">
+        <h3>2. Configuração Rápida</h3>
+        <div style="background: #333; padding: 15px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+            <label for="livreQuantity" style="font-size: 1.1em; color: gold;">Quantas questões?</label>
+            <input type="number" id="livreQuantity" class="quantity-input" value="20" min="1" style="width: 80px; font-size: 1.3em; font-weight: bold;">
+        </div>
+      </div>
+
+      <div id="provasOptions" class="settings-section" style="display: none;">
+        <h3>2. Filtro para Provas</h3>
+        <label for="provasAno">Escolha o Ano:</label>
+        <select id="provasAno" style="width: 100%; padding: 8px; margin-top: 5px;">
+          <option value="todos">Todos os Anos</option>
+        </select>
+      </div>
+
       <div class="settings-section">
-        <h3>3. Filtro de Peso</h3>
-        <div class="mode-selection">
-          <label>
-            <input type="radio" name="weightMode" value="ponderado" checked onchange="switchWeightMode(this.value)"> Aleatório Ponderado
-          </label>
-          <label>
-            <input type="radio" name="weightMode" value="minimo" onchange="switchWeightMode(this.value)"> Peso Mínimo
-          </label>
+        <h3>3. Inteligência e Pesos</h3>
+        
+        <div style="margin-bottom: 15px; background: rgba(255,215,0,0.1); padding: 10px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between;">
+            <label style="cursor: pointer; display: flex; align-items: center; flex-grow: 1;">
+                <input type="checkbox" id="enableFocusMode" style="transform: scale(1.3); margin-right: 10px;"> 
+                <span style="color: gold; font-weight: bold;">ATIVAR MODO FOCO 🧠</span>
+            </label>
+            <span class="info-icon" tabindex="0" data-tooltip="O sistema identifica automaticamente onde você tem dificuldade e manda mais questões desse assunto.">?</span>
         </div>
-        <div id="pesoMinimoOptions" style="display: none; margin-top: 10px;">
-          <label for="pesoMinimoValue">Mostrar questões com peso ≥ a:</label>
-          <input type="number" id="pesoMinimoValue" class="quantity-input" min="1" value="1" style="width: 70px;">
+
+        <div class="mode-selection">
+          
+          <div class="clean-option-row">
+            <label>
+              <input type="radio" name="weightMode" value="ponderado" onchange="switchWeightMode(this.value)"> 
+              Aleatório Ponderado
+            </label>
+            <span class="info-icon" tabindex="0" data-tooltip="Questões com maior peso (importância) aparecem mais vezes.">?</span>
+          </div>
+
+          <div class="clean-option-row">
+            <label>
+              <input type="radio" name="weightMode" value="minimo" onchange="switchWeightMode(this.value)"> 
+              Peso Mínimo
+            </label>
+            <span class="info-icon" tabindex="0" data-tooltip="Ignora questões fáceis. Só mostra questões com peso acima do definido.">?</span>
+          </div>
+
+        </div>
+        
+        <div id="pesoMinimoOptions" style="display: none; margin-top: 10px; padding-left: 5px;">
+          <label for="pesoMinimoValue">Peso mínimo exigido:</label>
+          <input type="number" id="pesoMinimoValue" class="quantity-input" min="1" value="1" style="width: 60px; margin-left: 10px;">
         </div>
       </div>
-      <!-- FIM DA NOVA SEÇÃO -->
+
       <div class="settings-actions">
-        <button id="startStudyBtn" class="start-button" onclick="startCustomStudy()">Iniciar Estudo</button> <!-- ID ADICIONADO AQUI -->
+        <button id="startStudyBtn" class="start-button" onclick="startCustomStudy()">INICIAR</button>
         <button class="close-button" onclick="closeSettingsModal()">Fechar</button>
       </div>
     </div>
-  </div>
+	</div>
   <!-- FIM DO NOVO MODAL DE CONFIGURAÇÕES -->
+  <div id="filterModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center;">
+    <div id="filterModalContent" style="background: #222; color: white; padding: 25px; border-radius: 10px; max-width: 400px; width: 90%; box-shadow: 0 0 30px rgba(255, 215, 0, 0.7); text-align: center; border: 1px solid #444; max-height: 90vh; overflow-y: auto;">
+      
+      <h2 style="color: gold; margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 10px;">Filtrar Cards</h2>
+
+      <div style="margin-bottom: 15px; text-align: left;">
+        <label style="display:block; color: gold; margin-bottom: 5px; font-weight: bold;">1. Disciplina</label>
+        <select id="modalDisciplineSelect" onchange="modalHandleDisciplineChange(this.value)" style="width: 100%; padding: 12px; background: #333; color: white; border: 1px solid #555; border-radius: 5px; font-size: 1.1em;">
+          <option value="">Selecione...</option>
+        </select>
+      </div>
+
+      <div id="modalTopicContainer" style="margin-bottom: 15px; text-align: left; display: none;">
+        <label style="display:block; color: gold; margin-bottom: 5px; font-weight: bold;">2. Tópico</label>
+        <select id="modalTopicSelect" onchange="modalHandleTopicChange(this.value)" style="width: 100%; padding: 12px; background: #333; color: white; border: 1px solid #555; border-radius: 5px; font-size: 1.1em;">
+          <option value="todos">Todos os Tópicos</option>
+        </select>
+      </div>
+
+      <div id="modalFocoContainer" style="margin-bottom: 25px; text-align: left; display: none;">
+        <label style="display:block; color: gold; margin-bottom: 5px; font-weight: bold;">3. Foco Específico</label>
+        <select id="modalFocoSelect" style="width: 100%; padding: 12px; background: #333; color: white; border: 1px solid #555; border-radius: 5px; font-size: 1.1em;">
+          <option value="todos">Todos os Focos</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-direction: column;">
+        <button onclick="applyModalFilter()" style="background: linear-gradient(to bottom, #FFD700, #D4AF37); color: black; border: none; padding: 12px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 1.1em;">APLICAR FILTRO</button>
+        
+        <button onclick="clearAndCloseFilter()" style="background: #444; color: white; border: 1px solid #666; padding: 10px; border-radius: 5px; cursor: pointer;">Limpar Filtros (Ver Tudo)</button>
+        
+        <button onclick="closeFilterModal()" style="background: transparent; border: none; color: #888; margin-top: 5px; cursor: pointer; text-decoration: underline;">Cancelar</button>
+      </div>
+    </div>
+  </div>
+  
   <div id="loginModal" style="display: flex;">
     <div class="login-container">
       <h2><i class="fas fa-lock"></i> Acesso aos Flashcards</h2>
@@ -1089,6 +1362,13 @@
       <button class="login-button" onclick="location.reload()">Fazer Login Novamente</button>
     </div>
   </div>
+  <div id="customAlertModal">
+    <div class="custom-alert-box">
+      <h3 style="color: #FFD700; margin-bottom: 15px; font-size: 1.5em;">⚠️ Atenção</h3>
+      <p id="customAlertMessage" style="color: white; font-size: 1.1em; line-height: 1.5;">Mensagem aqui</p>
+      <button class="custom-alert-btn" onclick="closeCustomAlert()">OK</button>
+    </div>
+  </div>
   <script>
     // --- CONFIGURAÇÃO INICIAL ---
     let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxfeIybUQvl-cb_VEBITzKF9Nbw97FgWMGWVF6pW-McV5MwVpJOoytWcVKl5dIApOjGZw/exec";
@@ -1099,7 +1379,8 @@
     let cards = [];
     let currentCard = 0;
     let showingFront = true;
-    let fontSize = 21.6;
+    // Se for celular (tela pequena), usa fonte 14. Se for PC, mantém 22
+    let fontSize = window.innerWidth < 768 ? 14 : 22;
     let timerSeconds = 0;
     const timerElement = document.getElementById("timer");
     const cardContainer = document.getElementById("card-container");
@@ -1126,9 +1407,17 @@
     // Variáveis para categorias
     let categories = [];
     let currentCategory = "Todas";
-    // Variáveis para medição de tempo de resposta
+	// Variável para lembrar o último filtro usado
+    let lastFilterSelections = { discipline: "", topic: "", foco: "" };
     let cardViewStartTime = 0;
     let isAutoAdvancePaused = false;
+	// --- VARIÁVEIS DO APRENDIZADO ADAPTATIVO ---
+    let userLearningStats = {
+        totalCharsRead: 0,
+        totalTimeRead: 0,
+        topicWeights: {} // Ex: { "Direito Const": 2, "Português": 1 }
+    };
+    // -------------------------------------------
 let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay') 
   ? parseInt(localStorage.getItem('lastAutoAdvanceDelay'), 10) 
   : 0;
@@ -1155,6 +1444,7 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
     }
 
     // Função para resetar a UI após logout
+  // Função para resetar a UI após logout
     function resetUIForLogout() {
       document.getElementById("flashcard-content").textContent = "Por favor, faça login para acessar os flashcards.";
       cardCounter.textContent = "0/0";
@@ -1193,8 +1483,15 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
       cardResponseTimes = {};
       currentCategory = "Todas";
       
-      const categorySelect = document.getElementById("categoryFilter");
-      categorySelect.innerHTML = '<option value="Todas">Todas Categorias</option>';
+      // --- CORREÇÃO: Esconde o Modal de Filtro e reseta o ícone ---
+      const modalFilter = document.getElementById("filterModal");
+      if (modalFilter) modalFilter.style.display = "none";
+      
+      const filterBtn = document.getElementById('filterBtn');
+      if(filterBtn) {
+          filterBtn.style.color = 'white';
+          filterBtn.style.textShadow = 'none';
+      }
     }
 
     // --- FUNÇÕES DE AUTENTICAÇÃO ---
@@ -1548,112 +1845,138 @@ loadFlashcardsFromGoogleSheet(SHEET_ID, GID).then(() => {
     }
 
     async function loadFlashcardsFromGoogleSheet(sheetId, gid) {
-  if (!isAuthenticated) {
-    document.getElementById("flashcard-content").textContent = "Por favor, faça login para acessar os flashcards.";
-    cardCounter.textContent = "0/0";
-    return;
-  }
-  
-  if (isSessionExpired()) {
-    expireSession();
-    return;
-  }
-  
-  const csvUrl = buildGoogleSheetCsvUrl(sheetId, gid);
-  if (!csvUrl) {
-      document.getElementById("flashcard-content").textContent = "Erro: 'sheetId' não foi fornecido nos parâmetros da URL.";
-      cardCounter.textContent = "0/0";
-      return;
-  }
-  
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-    const response = await fetch(csvUrl, { signal: controller.signal });
-    clearTimeout(timeoutId);
-    
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erro HTTP! Status: ${response.status}. Detalhes: ${errorText.substring(0, 200)}...`);
-    }
-    
-    const text = await response.text();
-    const lines = splitCSVRecords(text).slice(1).filter(line => line.trim() !== "");
-
-    let loadedCards = [];
-    lines.forEach(line => {
-        const cols = parseCSVLine(line);
-        
-        // Requisitos mínimos: a linha deve ter pelo menos pergunta (col 0) e resposta (col 1)
-        if (cols.length < 2) return;
-
-        const frontText = (cols[0] || '').trim();
-        const backText = (cols[1] || '').trim();
-        
-        // Ignora o card se a pergunta ou a resposta estiverem vazias
-        if (!frontText || !backText) return;
-
-      // --- BLOCO DE LEITURA ATUALIZADO E BLINDADO ---
-        // Mapeamento: Col C(2):Categoria | Col D(3):Disciplina | Col F(5):Peso | Col G(6):Tipo | Col H(7):Ano
-        const categoria = (cols[4] || "").trim();
-        const disciplina = (cols[3] || "").trim();
-        const peso = parseInt(cols[5]) || 1;
-        
-        // Lê o tipo, remove espaços e força minúsculo. Se vazio, assume 'simulado'.
-        let tipoRaw = (cols[6] || "").trim().toLowerCase();
-        const tipo = tipoRaw === "" ? 'simulado' : tipoRaw;
-        
-        const ano = (cols[7] || "").trim();
-        // -------------------------------------------------
-
-        // *** A CORREÇÃO ESTÁ AQUI ***
-        // O card só será adicionado se tiver uma DISCIPLINA. A categoria é opcional.
-        if (disciplina) {
-            loadedCards.push({ front: frontText, back: backText, tipo: tipo, categoria: categoria, disciplina: disciplina, peso: peso, ano: ano });
-        }
-    });
-
-    if (loadedCards.length === 0) {
-        document.getElementById("flashcard-content").textContent = "Nenhum flashcard válido foi encontrado na planilha. Verifique se as colunas 'Pergunta', 'Resposta' e 'Disciplina' estão preenchidas.";
+      if (!isAuthenticated) {
+        document.getElementById("flashcard-content").textContent = "Por favor, faça login para acessar os flashcards.";
         cardCounter.textContent = "0/0";
-    } else {
-        initialCards = loadedCards;
-        cards = [...initialCards];
-        // Popula o filtro de categorias (tópicos)
-        categories = ["Todas", ...new Set(loadedCards.map(card => card.categoria).filter(c => c))]; // Filtra categorias vazias
-        const categorySelect = document.getElementById("categoryFilter");
-        categorySelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        return;
+      }
+      
+      if (isSessionExpired()) {
+        expireSession();
+        return;
+      }
+      
+      const csvUrl = buildGoogleSheetCsvUrl(sheetId, gid);
+      if (!csvUrl) {
+          document.getElementById("flashcard-content").textContent = "Erro: 'sheetId' não foi fornecido nos parâmetros da URL.";
+          cardCounter.textContent = "0/0";
+          return;
+      }
+      
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const response = await fetch(csvUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
         
-        const hasSavedState = loadFlashcardState();
-        if (!hasSavedState) {
-          currentCard = 0;
-          showingFront = true;
-          currentCategory = "Todas";
-          cardAccuracy = {};
-          isReviewErrorsMode = false;
-        } else {
-          filterByCategory(currentCategory, true);
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Erro HTTP! Status: ${response.status}. Detalhes: ${errorText.substring(0, 200)}...`);
         }
         
-        loadStatsFromStorage();
-		openSettingsModal(); // Abre as configurações após carregar
-        updateCard();
+        const text = await response.text();
+        const lines = splitCSVRecords(text).slice(1).filter(line => line.trim() !== "");
+
+        let loadedCards = [];
+        lines.forEach(line => {
+            const cols = parseCSVLine(line);
+            
+            // Requisitos mínimos: pergunta (0) e resposta (1)
+            if (cols.length < 2) return;
+
+            const frontText = (cols[0] || '').trim();
+            const backText = (cols[1] || '').trim();
+            
+            if (!frontText || !backText) return;
+
+            // --- LEITURA CORRIGIDA DAS COLUNAS ---
+            // Col C (Índice 2) = FOCO
+            const foco = (cols[2] || "").trim(); 
+            
+            // Col D (Índice 3) = DISCIPLINA
+            const disciplina = (cols[3] || "").trim();
+            
+            // Col E (Índice 4) = TÓPICO (Antiga categoria)
+            const topico = (cols[4] || "").trim();
+            
+            const peso = parseInt(cols[5]) || 1;
+            
+            let tipoRaw = (cols[6] || "").trim().toLowerCase();
+            const tipo = tipoRaw === "" ? 'simulado' : tipoRaw;
+            
+            const ano = (cols[7] || "").trim();
+            // -------------------------------------
+
+            // O card é adicionado se tiver Disciplina
+            if (disciplina) {
+                // Note que agora salvamos 'topico' e 'foco' separadamente
+                // Mantemos 'categoria' apontando para topico para compatibilidade com o filtro
+                loadedCards.push({ 
+                    front: frontText, 
+                    back: backText, 
+                    tipo: tipo, 
+                    categoria: topico, // O filtro usa isso
+                    topico: topico,    // Nome correto
+                    foco: foco,        // Nome correto (Col C)
+                    disciplina: disciplina, 
+                    peso: peso, 
+                    ano: ano 
+                });
+            }
+        });
+
+        if (loadedCards.length === 0) {
+            document.getElementById("flashcard-content").textContent = "Nenhum flashcard válido foi encontrado.";
+            cardCounter.textContent = "0/0";
+        } else {
+            initialCards = loadedCards;
+            cards = [...initialCards];
+            const hasSavedState = loadFlashcardState();
+            
+            // CORREÇÃO: Forçamos o reset para evitar buscar menus que não existem mais
+            currentCategory = "Todas";
+            cards = [...initialCards];
+            
+            // Se não tinha estado salvo, zera variáveis críticas
+            if (!hasSavedState) {
+              currentCard = 0;
+              showingFront = true;
+              cardAccuracy = {};
+              isReviewErrorsMode = false;
+            }
+            // Removemos o 'else' que chamava o filtro antigo
+            
+            loadStatsFromStorage();
+            
+            // ALTERAÇÃO: Em vez de abrir o modal, destacamos o botão por 10s
+            // openSettingsModal(); <--- (Linha removida/comentada)
+            
+            const btn = document.getElementById("settingsBtn");
+            if (btn) {
+                btn.classList.add("settings-highlight");
+                // Remove o destaque após 10 segundos (10000ms)
+                setTimeout(() => {
+                    btn.classList.remove("settings-highlight");
+                }, 10000);
+            }
+            updateCard();
+        }
+        return loadedCards;
+      } catch (error) {
+          console.error("Erro ao carregar os flashcards:", error);
+          document.getElementById("flashcard-content").textContent = `Erro ao carregar flashcards: ${error.message}`;
+          cardCounter.textContent = "0/0";
+          return [];
+      }
     }
-	return loadedCards;
-  } catch (error) {
-      console.error("Erro ao carregar os flashcards:", error);
-      document.getElementById("flashcard-content").textContent = `Erro ao carregar flashcards: ${error.message}`;
-      cardCounter.textContent = "0/0";
-	  return [];
-  }
-}
 
     function filterByCategory(category, skipSave = false) {
       if (!requireAuth()) return;
       
       currentCategory = category;
-      const categorySelect = document.getElementById("categoryFilter");
-      categorySelect.value = category;
+      document.getElementById("mainFilterSelect").value = ""; // Reseta para a palavra "Seleção"
+document.getElementById("topicSelect").style.display = "none";
+document.getElementById("focoSelect").style.display = "none";
 	  categorySelect.title = category; // ← mostra o nome completo em tooltip
       
       if (category === "Todas") {
@@ -1684,14 +2007,16 @@ loadFlashcardsFromGoogleSheet(SHEET_ID, GID).then(() => {
       }
     }
 
-        function updateCard() {
+    function updateCard() {
       if (!requireAuth() || cards.length === 0 || isFinished) return;
       const card = cards[currentCard];
       const contentElement = document.getElementById("flashcard-content");
       contentElement.textContent = showingFront ? card.front : card.back;
-      const originalIndex = initialCards.indexOf(cards[currentCard]);
-const originalNumber = originalIndex !== -1 ? originalIndex + 1 : '?';
-cardCounter.innerHTML = `<span class="current-card">${originalNumber}</span>/<span>${initialCards.length}</span>`;
+      // --- ALTERAÇÃO: Contador Relativo (Mostra posição no filtro atual) ---
+      // Ex: Mostra "1 / 15" (sendo 15 o total do tópico filtrado)
+      const currentPosition = currentCard + 1;
+      const totalInFilter = cards.length;
+      cardCounter.innerHTML = `<span class="current-card">${currentPosition}</span>/<span>${totalInFilter}</span>`;
       contentElement.style.fontSize = fontSize + "pt";
       updateAccuracyButtons();
       if (showingFront) {
@@ -1755,14 +2080,26 @@ cardCounter.innerHTML = `<span class="current-card">${originalNumber}</span>/<sp
 
     function flipCard() {
       if (!requireAuth() || isFinished) return;
+
+      const content = document.getElementById("flashcard-content");
       
-      if (showingFront) {
-        endResponseTimeMeasurement();
-      }
-      
-      showingFront = !showingFront;
-      updateCard();
-      saveFlashcardState();
+      // 1. Inicia a animação visual
+      content.classList.add("animate-flip");
+
+      // 2. Aguarda metade do tempo (0.2s) para trocar o texto quando o card estiver "de lado" (90 graus)
+      setTimeout(() => {
+          if (showingFront) {
+            endResponseTimeMeasurement();
+          }
+          showingFront = !showingFront;
+          updateCard();
+          saveFlashcardState();
+      }, 200);
+
+      // 3. Remove a classe ao final da animação (0.4s) para poder usar novamente depois
+      setTimeout(() => {
+          content.classList.remove("animate-flip");
+      }, 400);
     }
 
     function reviewAndRetreat() {
@@ -1786,14 +2123,27 @@ cardCounter.innerHTML = `<span class="current-card">${originalNumber}</span>/<sp
     function reviewAndAdvance() {
       if (!requireAuth() || isFinished) return;
       
+      // CASO 1: Está na Frente (Pergunta) -> Vira para o Verso (Resposta) COM ANIMAÇÃO NO TEXTO
       if (showingFront) {
-        endResponseTimeMeasurement();
-        showingFront = false;
-        updateCard();
+        const content = document.getElementById("flashcard-content"); // <--- MUDAMOS O ALVO AQUI
+        content.classList.add("animate-flip");
+
+        setTimeout(() => {
+            endResponseTimeMeasurement();
+            showingFront = false;
+            updateCard();
+            saveFlashcardState();
+        }, 200);
+
+        setTimeout(() => {
+            content.classList.remove("animate-flip");
+        }, 400);
+
       } else {
+        // CASO 2: Está no Verso -> Vai para o Próximo Card (Sem animação)
         nextCard();
+        saveFlashcardState();
       }
-      saveFlashcardState();
     }
 
     function markAsCorrect() {
@@ -2125,10 +2475,11 @@ function changeTextColor(color) {
     function saveStatsToStorage() {
       if (!requireAuth()) return;
       
-      const stats = {
+     const stats = {
         responseTimes: cardResponseTimes,
         lastAccess: new Date().toISOString(),
-        cardAccuracy: cardAccuracy
+        cardAccuracy: cardAccuracy,
+        userLearningStats: userLearningStats // Salva o aprendizado
       };
       
       localStorage.setItem(`flashcardStats_${SHEET_ID}_${GID}`, JSON.stringify(stats));
@@ -2143,6 +2494,17 @@ function changeTextColor(color) {
         cardResponseTimes = stats.responseTimes || {};
         if (stats.lastAccess) lastAccessDate = new Date(stats.lastAccess);
         if (stats.cardAccuracy) cardAccuracy = stats.cardAccuracy;
+        
+        // Carrega a inteligência adaptativa
+        if (stats.userLearningStats) {
+            userLearningStats = stats.userLearningStats;
+            
+            // --- VACINA DE SEGURANÇA ---
+            // Se salvou com o nome antigo, converte para o novo ou cria vazio
+            if (!userLearningStats.topicWeights) {
+                userLearningStats.topicWeights = userLearningStats.disciplineWeights || {};
+            }
+        }
       } catch (e) {
         console.error("Erro ao carregar estatísticas:", e);
       }
@@ -2153,10 +2515,77 @@ function changeTextColor(color) {
     }
 
     function endResponseTimeMeasurement() {
-      if (cardViewStartTime > 0) {
-        const timeSpent = Math.round((Date.now() - cardViewStartTime) / 1000);
-        recordResponseTime(currentCard, timeSpent);
+      if (cardViewStartTime === 0) return;
+
+      try {
+        const rawTime = (Date.now() - cardViewStartTime) / 1000;
+        const timeSpent = Math.min(rawTime, 120); 
+
+        // --- VERIFICA SE O MODO FOCO ESTÁ ATIVO NO HTML ---
+        // Se o modal não existir (primeiro load) ou estiver marcado, consideramos true
+        const focusCheckbox = document.getElementById('enableFocusMode');
+        const isFocusEnabled = focusCheckbox ? focusCheckbox.checked : true;
+
+        // Se o foco estiver DESLIGADO, a gente só grava o tempo e sai, sem mudar pesos.
+        if (!isFocusEnabled) {
+             recordResponseTime(currentCard, Math.round(timeSpent));
+             saveStatsToStorage();
+             return; // <--- SAI DA FUNÇÃO AQUI
+        }
+        // --------------------------------------------------
+
+        // --- LÓGICA ADAPTATIVA (Só roda se não saiu acima) ---
+        const currentCardObj = cards[currentCard];
+        
+        if (currentCardObj) {
+            const currentTopic = currentCardObj.topico; 
+            const charCount = (currentCardObj.front.length + currentCardObj.back.length) || 1;
+            const currentSpeed = timeSpent / charCount;
+
+            if (!userLearningStats.topicWeights) userLearningStats.topicWeights = {};
+
+            userLearningStats.totalTimeRead += timeSpent;
+            userLearningStats.totalCharsRead += charCount;
+            
+            const globalAvgSpeed = userLearningStats.totalCharsRead > 0 
+                ? userLearningStats.totalTimeRead / userLearningStats.totalCharsRead 
+                : 0.5;
+
+            if (currentTopic && userLearningStats.topicWeights[currentTopic] === undefined) {
+                userLearningStats.topicWeights[currentTopic] = 0; 
+            }
+
+            // DIFICULDADE
+            if (timeSpent > 5 && currentSpeed > (globalAvgSpeed * 1.5)) {
+                if (currentTopic) {
+                    userLearningStats.topicWeights[currentTopic] += 0.5; 
+                    showFeedback(`Focando em: ${currentTopic}`, "#ff5555");
+
+                    const candidates = initialCards.filter(c => 
+                        c.topico === currentTopic && !cards.includes(c)
+                    );
+                    if (candidates.length > 0) {
+                        const reinforcementCard = candidates[Math.floor(Math.random() * candidates.length)];
+                        const insertIndex = Math.min(currentCard + 3, cards.length);
+                        cards.splice(insertIndex, 0, reinforcementCard);
+                    }
+                }
+            }
+            // RECUPERAÇÃO
+            else if (timeSpent > 2 && currentSpeed <= (globalAvgSpeed * 1.2)) {
+                if (currentTopic && userLearningStats.topicWeights[currentTopic] > 0) {
+                    userLearningStats.topicWeights[currentTopic] -= 0.25;
+                    if (userLearningStats.topicWeights[currentTopic] < 0) userLearningStats.topicWeights[currentTopic] = 0;
+                }
+            }
+        }
+        
+        recordResponseTime(currentCard, Math.round(timeSpent));
         saveStatsToStorage();
+
+      } catch (error) {
+        console.error("Erro na inteligência adaptativa:", error);
+      } finally {
         cardViewStartTime = 0;
       }
     }
@@ -2305,6 +2734,40 @@ function changeTextColor(color) {
       document.getElementById('flashcard-content').style.display = 'none';
       document.getElementById('end-screen').style.display = 'flex';
       isFinished = true;
+
+      // --- INÍCIO DA ANIMAÇÃO DE CONFETES ---
+      try {
+        var duration = 3 * 1000; // Duração: 3 segundos
+        var end = Date.now() + duration;
+
+        (function frame() {
+          // Lança confetes da esquerda
+          confetti({
+            particleCount: 5,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 },
+            colors: ['#FFD700', '#FFFFFF', '#DAA520'], // Dourado, Branco e Ouro Velho
+            zIndex: 10001 // Garante que apareça acima de tudo
+          });
+          // Lança confetes da direita
+          confetti({
+            particleCount: 5,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 },
+            colors: ['#FFD700', '#FFFFFF', '#DAA520'],
+            zIndex: 10001
+          });
+
+          if (Date.now() < end) {
+            requestAnimationFrame(frame);
+          }
+        }());
+      } catch (e) {
+        console.log("Biblioteca de confetes não carregada");
+      }
+      // --- FIM DOS CONFETES ---
       
       let totalCorrect = 0;
       let totalIncorrect = 0;
@@ -2528,10 +2991,6 @@ function resetAutoAdvanceTimer() {
   }
 }
 
-document.getElementById('autoAdvanceButton').addEventListener('mouseleave', () => {
-  clearTimeout(longPressTimer);
-});
-
 function showFeedback(message, color = "gold") {
   const feedback = document.createElement('div');
   feedback.textContent = message;
@@ -2620,29 +3079,63 @@ function updateAutoAdvanceUI() {
     // Alterna a exibição das opções entre "Simulado" e "Provas"
    // Alterna a exibição das opções e CARREGA as disciplinas (VERSÃO ATUALIZADA)
    function switchStudyMode(mode) {
-      document.getElementById('simuladoOptions').style.display = (mode === 'simulado') ? 'block' : 'none';
-      document.getElementById('provasOptions').style.display = (mode === 'provas') ? 'block' : 'none';
+      // 1. Esconde TODAS as opções da etapa 2
+      document.getElementById('simuladoOptions').style.display = 'none';
+      document.getElementById('provasOptions').style.display = 'none';
+      document.getElementById('livreOptions').style.display = 'none';
+
+      // 2. Mostra APENAS a opção selecionada
+      if (mode === 'simulado') {
+          document.getElementById('simuladoOptions').style.display = 'block';
+      } else if (mode === 'provas') {
+          document.getElementById('provasOptions').style.display = 'block';
+      } else if (mode === 'livre') {
+          document.getElementById('livreOptions').style.display = 'block';
+      }
     }
 
     // Função principal que inicia o estudo com base nas configurações escolhidas
    // Função principal que inicia o estudo com base nas configurações escolhidas (VERSÃO ATUALIZADA)
     // Função principal que inicia o estudo (VERSÃO ATUALIZADA E SIMPLIFICADA)
     // Função principal que inicia o estudo (VERSÃO ATUALIZADA E SIMPLIFICADA)
+// --- FUNÇÕES DO ALERTA PERSONALIZADO ---
+function showCustomAlert(msg) {
+  document.getElementById('customAlertMessage').textContent = msg;
+  document.getElementById('customAlertModal').style.display = 'flex';
+}
+
+function closeCustomAlert() {
+  document.getElementById('customAlertModal').style.display = 'none';
+}
+
 function startCustomStudy() {
-  const studyMode = document.querySelector('input[name="studyMode"]:checked').value;
+  // 1. Validação de Segurança: O usuário selecionou um modo?
+  const modeEl = document.querySelector('input[name="studyMode"]:checked');
+  if (!modeEl) {
+    // Substituído alert() por showCustomAlert()
+    showCustomAlert("Por favor, selecione um Modo de Estudo (Item 1) antes de iniciar.");
+    return;
+  }
+  
+  // 2. Validação de Segurança: O usuário selecionou um peso?
+  const weightEl = document.querySelector('input[name="weightMode"]:checked');
+  if (!weightEl) {
+    // Substituído alert() por showCustomAlert()
+    showCustomAlert("Por favor, selecione uma opção de Pesos (Item 3) para continuar.");
+    return;
+  }
+
+  const studyMode = modeEl.value;
   
   closeSettingsModal();
   showLoadingIndicator(`Iniciando ${studyMode}...`);
   
   try {
-    let filteredCards = [];
+    let filteredCards = []; // Cards candidatos
     
+    // --- MODO 1: SIMULADO (Por disciplina específica) ---
     if (studyMode === 'simulado') {
-      // 1. Filtra os cards: Aceita TUDO que não for explicitamente uma "prova"
-      // Isso garante que células vazias ou com nomes diferentes entrem no simulado.
       const simuladoPool = initialCards.filter(card => !card.tipo.includes('prova'));
-      
-      // 2. Coleta a configuração do usuário
       const config = [];
       const rows = document.querySelectorAll('#simuladoDisciplineInputs .discipline-row');
       rows.forEach(row => {
@@ -2652,31 +3145,70 @@ function startCustomStudy() {
           config.push({ disciplina, quantidade });
         }
       });
-      
-      // 3. Gera o baralho customizado a partir do pool filtrado
       cards = generateCustomDeck(simuladoPool, config);
 
-    } else { // Modo Provas
-      // 1. Filtra os cards com base na nova coluna "Tipo"
+    // --- MODO 2: ESTUDO LIVRE (Aleatório Geral) ---
+    } else if (studyMode === 'livre') {
+       // Pega todas as questões que NÃO são de prova (ou inclui provas se preferir)
+       // Aqui vamos pegar tudo que não é explicitamente 'prova' fechada, ou tudo mesmo.
+       // Vamos usar o mesmo pool do simulado:
+       const fullPool = initialCards.filter(card => !card.tipo.includes('prova'));
+       
+       const qtdDesejada = parseInt(document.getElementById('livreQuantity').value) || 20;
+       
+       // Usa a função de geração, mas fingimos que é uma única "disciplina gigante"
+       // Ou simplesmente embaralhamos tudo e pegamos X.
+       // Vamos usar a lógica de PESO para ser inteligente.
+       
+       // Cria um config fake para usar a função generateCustomDeck? Não, melhor fazer direto:
+       let weightedPool = [];
+       const isFocusEnabled = document.getElementById('enableFocusMode').checked;
+
+       fullPool.forEach(card => {
+          let finalWeight = card.peso || 1;
+          // Aplica inteligência se estiver ativo
+          if (isFocusEnabled && userLearningStats.topicWeights && userLearningStats.topicWeights[card.topico]) {
+              finalWeight += Math.floor(userLearningStats.topicWeights[card.topico]);
+          }
+          finalWeight = Math.min(finalWeight, 10);
+
+          // Adiciona ao pool N vezes baseado no peso
+          for(let i=0; i<finalWeight; i++) weightedPool.push(card);
+       });
+
+       // Embaralha o pool gigante
+       for (let i = weightedPool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [weightedPool[i], weightedPool[j]] = [weightedPool[j], weightedPool[i]];
+       }
+
+       // Seleciona únicos até a quantidade
+       const selectedSet = new Set();
+       for (const c of weightedPool) {
+           if (selectedSet.size < qtdDesejada) selectedSet.add(c);
+           else break;
+       }
+       cards = Array.from(selectedSet);
+
+    // --- MODO 3: PROVAS ---
+    } else { 
       filteredCards = initialCards.filter(card => card.tipo === 'Prova');
-      
-      // 2. Aplica o filtro de ano
       const selectedYear = document.getElementById('provasAno').value;
       if (selectedYear !== 'todos') {
         cards = filteredCards.filter(card => card.ano === selectedYear);
       } else {
-        cards = filteredCards; // Usa todos os cards de prova
+        cards = filteredCards;
       }
     }
 
-    // --- INÍCIO DA LÓGICA DO FILTRO DE PESO ADICIONADA ---
+    // --- FILTRO DE PESO MÍNIMO (Só se aplica se NÃO for ponderado, pois o ponderado já foi feito acima) ---
+    // Nota: No 'simulado' e 'livre', a gente já usou o peso para selecionar.
+    // Mas se o usuário marcou "Peso Mínimo", temos que cortar quem tem peso baixo.
     const weightMode = document.querySelector('input[name="weightMode"]:checked').value;
     if (weightMode === 'minimo') {
       const minWeight = parseInt(document.getElementById('pesoMinimoValue').value) || 1;
       cards = cards.filter(card => card.peso >= minWeight);
     }
-    // Se for 'ponderado', a função generateCustomDeck já cuida disso para simulados.
-    // --- FIM DA LÓGICA DO FILTRO DE PESO ---
     
     if (cards.length === 0) {
       document.getElementById("flashcard-content").textContent = "Nenhum card encontrado para os critérios selecionados.";
@@ -2685,13 +3217,14 @@ function startCustomStudy() {
       currentCard = 0;
       showingFront = true;
       isFinished = false;
-      cards.sort(() => Math.random() - 0.5); // Embaralha o resultado
+      // Embaralha final para garantir mistura
+      cards.sort(() => Math.random() - 0.5);
       updateCard();
       saveFlashcardState();
     }
   } catch (error) {
-    console.error("Erro ao iniciar estudo customizado:", error);
-    document.getElementById("flashcard-content").textContent = "Falha ao carregar os cards. Tente novamente.";
+    console.error("Erro ao iniciar estudo:", error);
+    document.getElementById("flashcard-content").textContent = "Falha ao carregar os cards.";
   } finally {
     hideLoadingIndicator();
   }
@@ -2763,10 +3296,22 @@ function startCustomStudy() {
         const disciplineCards = cardsByDiscipline[item.disciplina];
         if (!disciplineCards) return;
 
-        // Cria uma "piscina" de sorteio ponderada pelo peso
+        // Cria uma "piscina" de sorteio ponderada pelo peso + APRENDIZADO ADAPTATIVO
         let weightedPool = [];
         disciplineCards.forEach(card => {
-          for (let i = 0; i < card.peso; i++) {
+          // Pega o peso original da planilha
+          let finalWeight = card.peso || 1;
+          
+          // ADAPTATIVO: Soma o peso extra baseado no Tópico (Coluna E)
+          // O código usa 'card.categoria' para ler a Coluna E
+          if (userLearningStats.topicWeights[card.categoria]) {
+              finalWeight += Math.floor(userLearningStats.topicWeights[card.categoria]);
+          }
+
+          // Limite de segurança para não repetir exageradamente (máx 10x)
+          finalWeight = Math.min(finalWeight, 10);
+
+          for (let i = 0; i < finalWeight; i++) {
             weightedPool.push(card);
           }
         });
@@ -2810,56 +3355,243 @@ function startCustomStudy() {
         select.appendChild(option);
       });
     }
- </script>
-   <!-- Código para prevenir rolagem para fora do container -->
-  <script>
-    // Previne que o scroll do container afete a página do Google Sites
-    document.addEventListener('DOMContentLoaded', function() {
-      const cardContainer = document.getElementById('card-container');
-      
-      if (cardContainer) {
-        // Adiciona evento para quando o mouse entra no container
-        cardContainer.addEventListener('mouseenter', function() {
-          this.dataset.scrollLocked = 'true';
-        });
-        
-        // Adiciona evento para quando o mouse sai do container
-        cardContainer.addEventListener('mouseleave', function() {
-          delete this.dataset.scrollLocked;
-        });
-        
-        // Previne o scroll da página pai quando atinge os limites do container
-        cardContainer.addEventListener('wheel', function(e) {
-          if (this.scrollHeight <= this.clientHeight) return;
-          
-          const atTop = this.scrollTop === 0;
-          const atBottom = this.scrollTop + this.clientHeight >= this.scrollHeight - 1;
-          
-          if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
-            e.preventDefault();
-          }
-        }, { passive: false });
-        
-        // Previne touch scroll na página pai quando atinge os limites
-        cardContainer.addEventListener('touchstart', function(e) {
-          this.startY = e.touches[0].clientY;
-        });
-        
-        cardContainer.addEventListener('touchmove', function(e) {
-          if (!this.startY) return;
-          
-          const deltaY = e.touches[0].clientY - this.startY;
-          const atTop = this.scrollTop === 0;
-          const atBottom = this.scrollTop + this.clientHeight >= this.scrollHeight - 1;
-          
-          if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
-            e.preventDefault();
-          }
-          
-          this.startY = e.touches[0].clientY;
-        }, { passive: false });
-      }
+	// --- PAUSA INTELIGENTE ---
+    // Se o usuário trocar de aba ou minimizar, pausa o cronômetro
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            // Usuário saiu: Pausa o tempo
+            if (cardViewStartTime > 0) {
+                // Guarda quanto tempo já passou até agora numa variável temporária
+                const elapsed = Date.now() - cardViewStartTime;
+                sessionStorage.setItem('pausedTime', elapsed);
+                cardViewStartTime = 0; // Zera para não continuar contando
+                document.title = "⏸️ Pausado - Chico Concursos";
+            }
+        } else {
+            // Usuário voltou: Retoma o tempo
+            const pausedElapsed = parseInt(sessionStorage.getItem('pausedTime') || '0');
+            if (pausedElapsed > 0) {
+                // "Volta no tempo" para simular que o relógio continuou de onde parou
+                cardViewStartTime = Date.now() - pausedElapsed;
+                sessionStorage.removeItem('pausedTime');
+                document.title = "Chico Concursos - Flashcards";
+            }
+        }
     });
+	// --- LÓGICA DO MODAL DE FILTRO INTELIGENTE ---
+
+    // 1. Abrir o Modal e Preencher Disciplinas
+    // 1. Abrir o Modal e Restaurar Última Escolha
+    function openFilterModal() {
+      if (!requireAuth()) return;
+      
+      const modal = document.getElementById('filterModal');
+      const discSelect = document.getElementById('modalDisciplineSelect');
+      
+      // Busca disciplinas únicas
+      const uniqueDisc = [...new Set(initialCards.map(c => c.disciplina).filter(d => d))].sort();
+      
+      discSelect.innerHTML = '<option value="">Selecione a Disciplina...</option>';
+      uniqueDisc.forEach(disc => {
+        const option = document.createElement('option');
+        option.value = disc;
+        option.textContent = disc;
+        discSelect.appendChild(option);
+      });
+
+      // Reseta visualização inicial
+      document.getElementById('modalTopicContainer').style.display = 'none';
+      document.getElementById('modalFocoContainer').style.display = 'none';
+
+      // --- LÓGICA DE MEMÓRIA: Restaura a seleção anterior se houver ---
+      if (lastFilterSelections.discipline) {
+          discSelect.value = lastFilterSelections.discipline;
+          
+          // Força o carregamento dos tópicos baseados na disciplina salva
+          modalHandleDisciplineChange(lastFilterSelections.discipline);
+          
+          if (lastFilterSelections.topic) {
+              const topicSelect = document.getElementById('modalTopicSelect');
+              topicSelect.value = lastFilterSelections.topic;
+              
+              // Força o carregamento dos focos baseados no tópico salvo
+              modalHandleTopicChange(lastFilterSelections.topic);
+              
+              if (lastFilterSelections.foco) {
+                  const focoSelect = document.getElementById('modalFocoSelect');
+                  // Verifica se a opção ainda existe antes de selecionar
+                  if (focoSelect.querySelector(`option[value="${lastFilterSelections.foco}"]`)) {
+                      focoSelect.value = lastFilterSelections.foco;
+                  }
+              }
+          }
+      }
+      // -------------------------------------------------------------
+
+      modal.style.display = 'flex';
+    }
+
+    // 2. Fechar Modal
+    function closeFilterModal() {
+      document.getElementById('filterModal').style.display = 'none';
+    }
+
+    // 3. Ao escolher Disciplina -> Carrega Tópicos
+    function modalHandleDisciplineChange(selectedDisc) {
+      const topicContainer = document.getElementById('modalTopicContainer');
+      const topicSelect = document.getElementById('modalTopicSelect');
+      const focoContainer = document.getElementById('modalFocoContainer');
+
+      // Reseta os passos seguintes
+      topicContainer.style.display = 'none';
+      focoContainer.style.display = 'none';
+
+      if (!selectedDisc) return;
+
+      // Filtra tópicos apenas desta disciplina
+      const cardsOfDisc = initialCards.filter(c => c.disciplina === selectedDisc);
+      const uniqueTopics = [...new Set(cardsOfDisc.map(c => c.topico).filter(t => t))].sort();
+
+      topicSelect.innerHTML = '<option value="todos">Todos os Tópicos</option>';
+      uniqueTopics.forEach(topic => {
+        const option = document.createElement('option');
+        option.value = topic;
+        option.textContent = topic;
+        topicSelect.appendChild(option);
+      });
+
+      topicContainer.style.display = 'block';
+    }
+
+    // 4. Ao escolher Tópico -> Verifica se precisa mostrar Foco
+    function modalHandleTopicChange(selectedTopic) {
+      const focoContainer = document.getElementById('modalFocoContainer');
+      const focoSelect = document.getElementById('modalFocoSelect');
+      const selectedDisc = document.getElementById('modalDisciplineSelect').value;
+
+      focoContainer.style.display = 'none';
+
+      if (!selectedTopic || selectedTopic === 'todos') return;
+
+      // Verifica focos existentes para (Disciplina + Tópico)
+      const cardsOfTopic = initialCards.filter(c => 
+          c.disciplina === selectedDisc && c.topico === selectedTopic
+      );
+      const uniqueFocos = [...new Set(cardsOfTopic.map(c => c.foco).filter(f => f))].sort();
+
+      // REGRA DE EFICIÊNCIA: Só mostra a caixa se tiver mais de 1 foco diferente
+      if (uniqueFocos.length > 1) {
+          focoSelect.innerHTML = '<option value="todos">Todos os Focos</option>';
+          uniqueFocos.forEach(foco => {
+            const option = document.createElement('option');
+            option.value = foco;
+            option.textContent = foco;
+            focoSelect.appendChild(option);
+          });
+          focoContainer.style.display = 'block';
+      }
+    }
+
+    // 5. Botão APLICAR (Executa o filtro real)
+    // 5. Botão APLICAR (Executa o filtro e Salva Memória)
+    function applyModalFilter() {
+      const disc = document.getElementById('modalDisciplineSelect').value;
+      const topic = document.getElementById('modalTopicSelect').value;
+      const foco = document.getElementById('modalFocoSelect').value;
+      const focoVisible = document.getElementById('modalFocoContainer').style.display !== 'none';
+
+      if (!disc) {
+        alert("Por favor, selecione pelo menos a Disciplina.");
+        return;
+      }
+
+      // --- SALVA NA MEMÓRIA ---
+      lastFilterSelections = {
+          discipline: disc,
+          topic: topic,
+          foco: (focoVisible ? foco : "") // Só salva o foco se a caixa estava visível
+      };
+      // ------------------------
+
+      // Inicia filtro pela Disciplina
+      let filtered = initialCards.filter(card => card.disciplina === disc);
+
+      // Filtra por Tópico
+      if (topic && topic !== 'todos') {
+        filtered = filtered.filter(card => card.topico === topic);
+        currentCategory = topic; 
+      } else {
+        currentCategory = disc;
+      }
+
+      // Filtra por Foco
+      if (focoVisible && foco && foco !== 'todos') {
+        filtered = filtered.filter(card => card.foco === foco);
+      }
+
+      finishFilterApplication(filtered);
+      
+      const btn = document.getElementById('filterBtn');
+      if(btn) {
+          btn.style.color = '#FFD700'; 
+          btn.style.textShadow = '0 0 10px gold';
+      }
+      
+      closeFilterModal();
+    }
+
+    // 6. Botão LIMPAR / TUDO
+    // 6. Botão LIMPAR (Reseta os campos e mostra tudo, mas mantém janela aberta)
+    function clearAndCloseFilter() {
+      // 1. Limpa a Memória
+      lastFilterSelections = { discipline: "", topic: "", foco: "" };
+
+      // 2. Reseta os Campos Visuais do Modal
+      document.getElementById('modalDisciplineSelect').value = "";
+      document.getElementById('modalTopicContainer').style.display = 'none';
+      document.getElementById('modalFocoContainer').style.display = 'none';
+      
+      // 3. Reseta o Filtro real (Mostra todos os cards no fundo)
+      currentCategory = "Todas";
+      finishFilterApplication([...initialCards]);
+      
+      // 4. Reseta a cor do ícone da pasta
+      const btn = document.getElementById('filterBtn');
+      if(btn) {
+          btn.style.color = 'white';
+          btn.style.textShadow = 'none';
+      }
+
+      // OBS: Não chamamos mais closeFilterModal(), então a janela continua aberta
+      // para você fazer uma nova seleção imediatamente.
+    }
+
+    // Função auxiliar para aplicar e salvar
+    function finishFilterApplication(newCardsList) {
+      // Mantém lógica de revisão de erros se estiver ativa
+      if (isReviewErrorsMode) {
+        newCardsList = newCardsList.filter((card) => {
+          const originalIndex = initialCards.indexOf(card);
+          return cardAccuracy[originalIndex] && cardAccuracy[originalIndex].incorrect > 0;
+        });
+      }
+
+      cards = newCardsList;
+
+      if (isShuffleActive) {
+        cards.sort(() => Math.random() - 0.5);
+      }
+
+      if (cards.length === 0) {
+        alert("Nenhum card encontrado com esses filtros.");
+        return; 
+      }
+
+      currentCard = 0;
+      showingFront = true;
+      updateCard();
+      saveFlashcardState();
+    }
   </script>
 </body>
 </html>

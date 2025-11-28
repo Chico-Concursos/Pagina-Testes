@@ -19,11 +19,13 @@
       justify-content: center;        /* ← CENTRALIZADO */
       align-items: center;
       background-color: #111;
-      padding: 0 10px;
-      flex-wrap: nowrap;              /* ← Não quebra linha */
-      overflow-x: auto;               /* ← Rolagem horizontal se necessário */
+      padding: 5px 10px;              /* ← Aumentei levemente o padding vertical */
+      flex-wrap: wrap;                /* ← ALTERADO: Agora quebra linha igual a base */
+      overflow: visible;              /* ← ALTERADO: Permite que o tooltip saia da caixa */
       gap: 10px;
       white-space: nowrap;
+      position: relative;             /* ← NOVO: Necessário para o z-index funcionar */
+      z-index: 100;                   /* ← NOVO: Garante que fique ACIMA do cartão */
     }
     .top-bar button,
     .top-bar select {
@@ -52,20 +54,43 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    /* CORREÇÃO DAS TOOLTIPS DA BARRA SUPERIOR */
+    .top-bar .tooltip {
+      position: relative; /* Garante referência */
     }
-    .tooltip:hover::after {
+    
+    /* Usa a classe .show-tooltip que o JS adiciona */
+    .top-bar .tooltip.show-tooltip::after {
       content: attr(data-tooltip);
       position: absolute;
-      top: 120%;
+      
+      /* Posicionamento ABAIXO do botão */
+      top: 110%; 
       left: 50%;
       transform: translateX(-50%);
-      background: #333;
+      
+      /* Visual */
+      background: #222;
       color: #fff;
-      padding: 5px 8px;
-      border-radius: 4px;
+      padding: 6px 10px;
+      border-radius: 5px;
       white-space: nowrap;
-      font-size: 0.8em;
-      z-index: 10;
+      font-size: 0.85em;
+      border: 1px solid gold; /* Borda para destaque */
+      box-shadow: 0 4px 15px rgba(0,0,0,0.9);
+      
+      z-index: 10005; /* Z-index altíssimo para tentar furar camadas */
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Remove o comportamento padrão de hover do CSS antigo para evitar conflito */
+    .tooltip:hover::after {
+        display: none;
+    }
+    /* Restaura para quem tem a classe */
+    .tooltip.show-tooltip::after {
+        display: block;
     }
     #card-container {
       position: relative;
@@ -1011,13 +1036,56 @@
       transform: scale(1.05);
       box-shadow: 0 0 10px gold;
     }
+	/* ANIMAÇÃO DE FLASH DOS BOTÕES SRS */
+    @keyframes blink-srs {
+      0% { background-color: var(--blink-color); box-shadow: 0 0 15px var(--blink-color); color: black; }
+      100% { background-color: transparent; box-shadow: none; color: var(--blink-color); }
+    }
+    .blink-active {
+      animation: blink-srs 0.5s ease-out;
+    }
+	/* --- BARRA DE PROGRESSO --- */
+    #progressBarContainer {
+      width: 100%;
+      height: 6px; /* Altura da barra */
+      background-color: #222; /* Cor de fundo escura */
+      position: relative;
+      z-index: 5;
+    }
+    #progressBarFill {
+      height: 100%;
+      background: linear-gradient(90deg, #FFD700, #FFA500); /* Degradê Dourado */
+      width: 0%; /* Começa em 0 */
+      transition: width 0.5s ease-in-out; /* Animação suave */
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); /* Brilho */
+      border-radius: 0 4px 4px 0;
+    }
+	/* --- FEEDBACK VISUAL (PISCAR TELA) --- */
+    @keyframes flash-gold {
+      0% { box-shadow: inset 0 0 0 0 transparent; }
+      20% { box-shadow: inset 0 0 60px 20px rgba(255, 215, 0, 0.6); }
+      100% { box-shadow: inset 0 0 0 0 transparent; }
+    }
+    @keyframes flash-red {
+      0% { box-shadow: inset 0 0 0 0 transparent; }
+      20% { box-shadow: inset 0 0 60px 20px rgba(255, 50, 50, 0.6); }
+      100% { box-shadow: inset 0 0 0 0 transparent; }
+    }
+    .flash-success-anim {
+      animation: flash-gold 0.4s ease-out;
+    }
+    .flash-error-anim {
+      animation: flash-red 0.4s ease-out;
+    }
   </style>
 </head>
 <body>
-  <div class="top-bar">
-    <button id="settingsBtn" class="tooltip" data-tooltip="Configurações" onclick="openSettingsModal()">⚙️</button> <!-- NOVO BOTÃO ADICIONADO AQUI -->
-    <button class="tooltip" data-tooltip="Ajuda" onclick="toggleHelpModal()">❓</button>
-    <button class="tooltip" data-tooltip="Cor do cartão" onclick="toggleCardColorMenu()">🖌️</button>
+ <div class="top-bar">
+    <button id="settingsBtn" class="tooltip" data-tooltip="Configurações" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="openSettingsModal()">⚙️</button>
+    
+    <button class="tooltip" data-tooltip="Ajuda" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleHelpModal()">❓</button>
+    
+    <button class="tooltip" data-tooltip="Cor do cartão" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleCardColorMenu()">🖌️</button>
     <select id="cardColor" onchange="changeCardColor(this.value)" style="display:none;">
      <option value="white">Branco</option>
       <option value="black">Preto</option>
@@ -1028,7 +1096,8 @@
       <option value="darkred">Vermelho Escuro</option>
       <option value="gold">Dourado</option>
     </select>
-    <button class="tooltip" data-tooltip="Cor da fonte" onclick="toggleTextColorMenu()">🔤</button>
+    
+    <button class="tooltip" data-tooltip="Cor da fonte" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleTextColorMenu()">🔤</button>
     <select id="textColor" onchange="changeTextColor(this.value)" style="display:none;">
       <option value="black">Preto</option>
       <option value="white">Branco</option>
@@ -1039,18 +1108,28 @@
       <option value="darkred">Vermelho Escuro</option>
       <option value="gold">Dourado</option>
     </select>
-    <button class="tooltip" data-tooltip="Aumentar fonte" onclick="adjustFontSize(1)">A+</button>
-    <button class="tooltip" data-tooltip="Diminuir fonte" onclick="adjustFontSize(-1)">A-</button>
-	<button class="tooltip" data-tooltip="Destacar *palavras*" onclick="toggleHighlightAsterisks()">✨</button>
-    <span class="tooltip" data-tooltip="Tempo de revisão" onclick="resetTimer()">⏱️ <span id="timer">00:00</span></span>
-    <button class="tooltip" data-tooltip="Estatísticas" onclick="toggleStatsModal()">📈</button>
-    <button id="reviewErrorsButton" class="tooltip" data-tooltip="Revisar apenas cards com erro" onclick="toggleReviewErrors()" style="display:none;">🔍</button>
-    </button>
-	<button id="filterBtn" class="tooltip" data-tooltip="Filtrar Conteúdo" onclick="openFilterModal()">📂</button>
+    
+    <button class="tooltip" data-tooltip="Aumentar fonte" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="adjustFontSize(1)">A+</button>
+    <button class="tooltip" data-tooltip="Diminuir fonte" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="adjustFontSize(-1)">A-</button>
+    
+    <button class="tooltip" data-tooltip="Destacar *palavras*" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleHighlightAsterisks()">✨</button>
+    
+    <span class="tooltip" data-tooltip="Tempo de revisão" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="resetTimer()">⏱️ <span id="timer">00:00</span></span>
+    
+    <button class="tooltip" data-tooltip="Estatísticas" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleStatsModal()">📈</button>
+    
+    <button id="reviewErrorsButton" class="tooltip" data-tooltip="Revisar apenas cards com erro" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleReviewErrors()" style="display:none;">🔍</button>
+    
+    <button id="filterBtn" class="tooltip" data-tooltip="Filtrar Conteúdo" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="openFilterModal()">📂</button>
+    
+    <button id="ttsButton" data-tooltip="Ler em Voz Alta (S)" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleSpeech()">🗣️</button>
 	<button class="logout-button" onclick="logout()">
       <i class="fas fa-sign-out-alt"></i> Sair
+    </button>
   </div>
-  <div id="fontSizeFeedback"></div>
+  <div id="progressBarContainer">
+    <div id="progressBarFill"></div>
+  </div>
   <div id="highlightFeedback"></div>
   <div id="autoAdvanceSetup">
       <h3>Tempo Automático (segundos)</h3>
@@ -1073,21 +1152,27 @@
     </div>
   </div>
   <div class="bottom-bar">
-    <div id="autoAdvanceControls" style="display: flex; align-items: center; gap: 8px;">
-  <!-- Botão Iniciar (aparece quando DESATIVADO) -->
-  <button id="autoAdvanceStartBtn" class="tooltip" data-tooltip="Iniciar temporizador" style="font-size: 1.2em;" onclick="startAutoAdvanceSmart()">⏳</button>
-
-  <!-- Botões de controle (aparecem quando ATIVO) -->
- <div id="autoAdvanceActiveGroup" style="display: none; gap: 8px; align-items: center;">
-  <button class="tooltip" data-tooltip="Pausar/Continuar" onclick="pauseOrResumeAutoAdvance()" style="font-size: 1.2em;" id="pauseResumeBtn">⏸️</button>
-  <button class="tooltip" data-tooltip="Parar temporizador" onclick="stopAutoAdvance()" style="font-size: 1.2em;">⏹️</button>
-  <button class="tooltip" data-tooltip="Resetar contagem" onclick="resetAutoAdvanceTimer()" style="font-size: 1.2em;">↻</button>
-  <button class="tooltip" data-tooltip="Alterar tempo" onclick="openAutoAdvanceSettings()" style="font-size: 1.2em;">⚙️</button>
-  <span id="autoAdvanceTimerDisplay" style="font-size: 1.0em; min-width: 50px; color: white;">0s</span>
-</div>
-</div>
-    <input type="number" id="goToCard" min="1" placeholder="1" onchange="goToSpecificCard()" />
+ <div id="autoAdvanceControls" style="display: flex; align-items: center; gap: 8px;">
+      <button id="autoAdvanceStartBtn" class="tooltip" data-tooltip="Iniciar temporizador" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="font-size: 1.2em;" onclick="startAutoAdvanceSmart()">⏳</button>
+      <div id="autoAdvanceActiveGroup" style="display: none; gap: 8px; align-items: center;">
+        <button class="tooltip" data-tooltip="Pausar/Continuar" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="pauseOrResumeAutoAdvance()" style="font-size: 1.2em;" id="pauseResumeBtn">⏸️</button>
+        <button class="tooltip" data-tooltip="Parar temporizador" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="stopAutoAdvance()" style="font-size: 1.2em;">⏹️</button>
+        <button class="tooltip" data-tooltip="Resetar contagem" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="resetAutoAdvanceTimer()" style="font-size: 1.2em;">↻</button>
+        <button class="tooltip" data-tooltip="Alterar tempo" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="openAutoAdvanceSettings()" style="font-size: 1.2em;">⚙️</button>
+        <span id="autoAdvanceTimerDisplay" style="font-size: 1.0em; min-width: 50px; color: white;">0s</span>
+      </div>
+    </div>
     <span id="cardCounter">0/0</span>
+	<div id="srsButtons" style="display: none; gap: 8px; justify-content: center; align-items: center;">
+        
+        <button id="btnAgain" class="accuracy-button" data-tooltip="Revisar em 10 min" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="position: relative; color: #ff5555; border: 1px solid #ff5555; border-radius: 5px; font-size: 1em; padding: 0px 10px; min-width: 70px;" onclick="rateCardSRS('again', this, '#ff5555')">Errei</button>
+
+        <button id="btnHard" class="accuracy-button" data-tooltip="Revisar em 2 dias" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="position: relative; color: #ffa500; border: 1px solid #ffa500; border-radius: 5px; font-size: 1em; padding: 0px 10px; min-width: 70px;" onclick="rateCardSRS('hard', this, '#ffa500')">Difícil</button>
+
+        <button id="btnGood" class="accuracy-button" data-tooltip="Revisar em 4 dias" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="position: relative; color: #90ee90; border: 1px solid #90ee90; border-radius: 5px; font-size: 1em; padding: 0px 10px; min-width: 70px;" onclick="rateCardSRS('good', this, '#90ee90')">Bom</button>
+
+        <button id="btnEasy" class="accuracy-button" data-tooltip="Revisar em 7 dias" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="position: relative; color: #00ff00; border: 1px solid #00ff00; border-radius: 5px; font-size: 1em; padding: 0px 10px; min-width: 70px;" onclick="rateCardSRS('easy', this, '#00ff00')">Fácil</button>
+    </div>
     <button class="accuracy-button" data-tooltip="Acertei (Tecla 1)" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="markAsCorrect()" id="correctButton">✅</button>
     <button class="accuracy-button" data-tooltip="Errei (Tecla 2)" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="markAsIncorrect()" id="incorrectButton">❌</button>
     <button id="shuffleButton" data-tooltip="Embaralhar cartas" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleShuffleMode()">🔀</button>
@@ -1206,7 +1291,13 @@
             </label>
            <span class="info-icon" tabindex="0" data-tooltip="Sorteio aleatório de todas as matérias. Você define apenas o total.">?</span>
           </div>
-
+<div class="clean-option-row">
+            <label>
+              <input type="radio" name="studyMode" value="srs" onchange="switchStudyMode(this.value)"> 
+              Repetição Espaçada (SRS) 🧠
+            </label>
+           <span class="info-icon" tabindex="0" data-tooltip="Sistema inteligente que agenda revisões. Você avalia a dificuldade e o sistema decide quando o card volta.">?</span>
+          </div>
           <div class="clean-option-row">
             <label>
               <input type="radio" name="studyMode" value="provas" onchange="switchStudyMode(this.value)"> 
@@ -1252,6 +1343,17 @@
       </div>
 
       <div class="settings-section">
+	  <div class="settings-section">
+        <h3>2.5. Configuração de Voz (TTS)</h3>
+        
+        <label style="display:block; color:gold; margin-bottom:5px;">Escolher Voz:</label>
+        <select id="voiceSelect" style="width:100%; padding:8px; background:#333; color:white; border:1px solid #555; border-radius:4px; margin-bottom:10px;">
+            <option value="">Carregando vozes...</option>
+        </select>
+
+        <label style="display:block; color:gold; margin-bottom:5px;">Velocidade de Leitura: <span id="rateValue">1.1x</span></label>
+        <input type="range" id="rateRange" min="0.5" max="3" step="0.1" value="1.1" style="width:100%; accent-color:gold;" oninput="document.getElementById('rateValue').textContent = this.value + 'x'">
+      </div>
         <h3>3. Inteligência e Pesos</h3>
         
         <div style="margin-bottom: 15px; background: rgba(255,215,0,0.1); padding: 10px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between;">
@@ -1261,9 +1363,13 @@
             </label>
             <span class="info-icon" tabindex="0" data-tooltip="O sistema identifica automaticamente onde você tem dificuldade e manda mais questões desse assunto.">?</span>
         </div>
-
-        <div class="mode-selection">
-          
+<div class="clean-option-row">
+            <label>
+              <input type="radio" name="weightMode" value="sequencial" onchange="switchWeightMode(this.value)"> 
+              Sequencial (Livre)
+            </label>
+            <span class="info-icon" tabindex="0" data-tooltip="Mantém a ordem original da planilha ou a ordem definida pelo SRS. Não embaralha.">?</span>
+          </div>
           <div class="clean-option-row">
             <label>
               <input type="radio" name="weightMode" value="ponderado" onchange="switchWeightMode(this.value)"> 
@@ -1278,7 +1384,6 @@
               Peso Mínimo
             </label>
             <span class="info-icon" tabindex="0" data-tooltip="Ignora questões fáceis. Só mostra questões com peso acima do definido.">?</span>
-          </div>
 
         </div>
         
@@ -1371,7 +1476,9 @@
   </div>
   <script>
     // --- CONFIGURAÇÃO INICIAL ---
+// --- CONFIGURAÇÃO INICIAL ---
     let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxfeIybUQvl-cb_VEBITzKF9Nbw97FgWMGWVF6pW-McV5MwVpJOoytWcVKl5dIApOjGZw/exec";
+    let SRS_BACKEND_URL = "https://script.google.com/macros/s/AKfycbxy_sanjZc0AL-kMIu5LJEqjrFLAVeHIJsWtQq_l5XEqOR5E38xsOzJyHzprjJCHh15/exec"; // NOVO BACKEND
     let isAuthenticated = false;
     let userEmail = '';
 	let userAllowedCourses = []; // Nova variável: armazena os IDs de planilhas que o usuário pode acessar
@@ -1578,6 +1685,9 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
     }
 
     function logout() {
+      // SALVAR ANTES DE SAIR
+      savePositionToBackend();
+
       if (sessionTimer) {
         clearInterval(sessionTimer);
         sessionTimer = null;
@@ -1646,8 +1756,16 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
       cardContainer.style.animation = 'none';
       void cardContainer.offsetWidth;
       cardContainer.style.animation = 'pulseSuccess 2s';
+      
+      // Carrega dados do SRS em paralelo
+      loadAllDataFromBackend(userEmail); 
+
       await loadFlashcardsFromGoogleSheet(SHEET_ID, GID);
       hideLoadingIndicator();
+      
+      // Tenta recuperar a posição após carregar tudo
+      checkForSavedPosition();
+
     } else {
       showLoginError(result.error || 'Erro durante a autenticação.');
       setLoginButtonLoading(false);
@@ -1667,32 +1785,40 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
   const savedAuth = localStorage.getItem('isAuthenticated');
   const savedEmail = localStorage.getItem('userEmail');
   if (savedAuth === 'true' && savedEmail) {
-    if (isSessionExpired()) {
-      expireSession();
-      return;
-    }
-    isAuthenticated = true;
-    userEmail = savedEmail;
+      if (isSessionExpired()) {
+        expireSession();
+        return;
+      }
+      isAuthenticated = true;
+      userEmail = savedEmail;
 
-    // Carrega os cursos permitidos do localStorage
-    const savedAllowedCourses = localStorage.getItem('userAllowedCourses');
-    userAllowedCourses = savedAllowedCourses ? JSON.parse(savedAllowedCourses) : [];
+      // Carrega cursos permitidos
+      const savedAllowedCourses = localStorage.getItem('userAllowedCourses');
+      userAllowedCourses = savedAllowedCourses ? JSON.parse(savedAllowedCourses) : [];
 
-    // Verifica permissão antes de carregar os flashcards
-    if (SHEET_ID && userAllowedCourses.length > 0 && !userAllowedCourses.includes(SHEET_ID)) {
-      document.getElementById("flashcard-content").textContent = "Você não possui acesso a este curso.";
-      cardCounter.textContent = "0/0";
-      document.getElementById('loginModal').style.display = 'flex'; // Mostra o modal de login novamente
-      return;
-    }
+      // Verifica permissão
+      if (SHEET_ID && userAllowedCourses.length > 0 && !userAllowedCourses.includes(SHEET_ID)) {
+        document.getElementById("flashcard-content").textContent = "Você não possui acesso a este curso.";
+        cardCounter.textContent = "0/0";
+        document.getElementById('loginModal').style.display = 'flex';
+        return;
+      }
 
-    document.getElementById('loginModal').style.display = 'none';
-    document.getElementById("flashcard-content").textContent = "Carregando flashcards...";
-    startSessionTimer();
-    showLoadingIndicator();
-loadFlashcardsFromGoogleSheet(SHEET_ID, GID).then(() => {
-      hideLoadingIndicator();
-    });
+      document.getElementById('loginModal').style.display = 'none';
+      document.getElementById("flashcard-content").textContent = "Carregando flashcards...";
+      startSessionTimer();
+      showLoadingIndicator();
+
+      // --- ORDEM DE CARREGAMENTO CORRIGIDA ---
+      // 1. Baixa seu progresso (Armazém + SRS)
+      loadAllDataFromBackend(userEmail).then(() => {
+          // 2. Baixa os Cards
+          return loadFlashcardsFromGoogleSheet(SHEET_ID, GID);
+      }).then(() => {
+          // 3. Tudo pronto: Esconde loading e Pergunta se quer continuar
+          hideLoadingIndicator();
+          checkForSavedPosition();
+      });
   } else {
     document.getElementById('loginModal').style.display = 'flex';
   }
@@ -1845,7 +1971,26 @@ loadFlashcardsFromGoogleSheet(SHEET_ID, GID).then(() => {
     }
 
     async function loadFlashcardsFromGoogleSheet(sheetId, gid) {
-      if (!isAuthenticated) {
+      // 1. TENTATIVA DE CARREGAMENTO LOCAL (CACHE)
+      const cacheKey = `cachedCards_${sheetId}_${gid}`;
+      const localData = localStorage.getItem(cacheKey);
+      let hasLoadedLocal = false;
+
+      if (localData) {
+          try {
+              console.log("Carregando do Cache Local...");
+              const parsedData = JSON.parse(localData);
+              if (parsedData && parsedData.length > 0) {
+                  processLoadedCards(parsedData, true); // true = origem cache
+                  hasLoadedLocal = true;
+                  showFeedback("Modo Offline: Cards carregados do cache.", "#4CAF50");
+              }
+          } catch (e) {
+              console.error("Cache inválido", e);
+          }
+      }
+
+      if (!isAuthenticated && !hasLoadedLocal) {
         document.getElementById("flashcard-content").textContent = "Por favor, faça login para acessar os flashcards.";
         cardCounter.textContent = "0/0";
         return;
@@ -1855,24 +2000,29 @@ loadFlashcardsFromGoogleSheet(SHEET_ID, GID).then(() => {
         expireSession();
         return;
       }
-      
+
+      // Se não carregou local, mostra loading para o usuário saber que estamos buscando
+      if (!hasLoadedLocal) {
+          showLoadingIndicator("Baixando planilha...");
+      }
+
+      // 2. TENTATIVA DE CARREGAMENTO DE REDE (ATUALIZAÇÃO)
       const csvUrl = buildGoogleSheetCsvUrl(sheetId, gid);
       if (!csvUrl) {
-          document.getElementById("flashcard-content").textContent = "Erro: 'sheetId' não foi fornecido nos parâmetros da URL.";
-          cardCounter.textContent = "0/0";
+          if (!hasLoadedLocal) {
+            document.getElementById("flashcard-content").textContent = "Erro: 'sheetId' não foi fornecido.";
+            cardCounter.textContent = "0/0";
+          }
           return;
       }
       
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
         const response = await fetch(csvUrl, { signal: controller.signal });
         clearTimeout(timeoutId);
         
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Erro HTTP! Status: ${response.status}. Detalhes: ${errorText.substring(0, 200)}...`);
-        }
+        if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
         
         const text = await response.text();
         const lines = splitCSVRecords(text).slice(1).filter(line => line.trim() !== "");
@@ -1880,69 +2030,69 @@ loadFlashcardsFromGoogleSheet(SHEET_ID, GID).then(() => {
         let loadedCards = [];
         lines.forEach(line => {
             const cols = parseCSVLine(line);
-            
-            // Requisitos mínimos: pergunta (0) e resposta (1)
             if (cols.length < 2) return;
 
             const frontText = (cols[0] || '').trim();
             const backText = (cols[1] || '').trim();
-            
-            if (!frontText || !backText) return;
-
-            // --- LEITURA CORRIGIDA DAS COLUNAS ---
-            // Col C (Índice 2) = FOCO
             const foco = (cols[2] || "").trim(); 
-            
-            // Col D (Índice 3) = DISCIPLINA (Com regra de Default "Geral")
             let disciplina = (cols[3] || "").trim();
-            
-            if (disciplina === "") {
-                disciplina = "Geral";
-            }
-            
-            // Col E (Índice 4) = TÓPICO (Antiga categoria)
+            if (disciplina === "") disciplina = "Geral";
             const topico = (cols[4] || "").trim();
-            
             const peso = parseInt(cols[5]) || 1;
-            
             let tipoRaw = (cols[6] || "").trim().toLowerCase();
             const tipo = tipoRaw === "" ? 'simulado' : tipoRaw;
-            
             const ano = (cols[7] || "").trim();
-            // -------------------------------------
 
-            // Adiciona o card (Sem restrição de disciplina vazia)
-            loadedCards.push({ 
-                front: frontText, 
-                back: backText, 
-                tipo: tipo, 
-                categoria: topico, // O filtro usa isso
-                topico: topico,    // Nome correto
-                foco: foco,        // Nome correto (Col C)
-                disciplina: disciplina, 
-                peso: peso, 
-                ano: ano 
-            });
+            if (frontText && backText) {
+                loadedCards.push({ front: frontText, back: backText, tipo, categoria: topico, topico, foco, disciplina, peso, ano });
+            }
         });
 
-        if (loadedCards.length === 0) {
+        if (loadedCards.length > 0) {
+            // SUCESSO: Atualiza o Cache e a tela
+            localStorage.setItem(cacheKey, JSON.stringify(loadedCards));
+            
+            // Só atualiza a tela se os dados forem diferentes ou se não tinha carregado antes
+            processLoadedCards(loadedCards, false);
+            
+            if (hasLoadedLocal) {
+                showFeedback("Lista de cards atualizada com sucesso!", "gold");
+            }
+        } else if (!hasLoadedLocal) {
             document.getElementById("flashcard-content").textContent = "Nenhum flashcard válido foi encontrado.";
             cardCounter.textContent = "0/0";
-        } else {
-            initialCards = loadedCards;
+        }
+        return loadedCards;
+
+      } catch (error) {
+          console.error("Erro ao baixar planilha:", error);
+          if (!hasLoadedLocal) {
+              document.getElementById("flashcard-content").textContent = `Erro de conexão: ${error.message}`;
+              cardCounter.textContent = "0/0";
+          } else {
+              showFeedback("Sem internet. Usando versão offline.", "#ffa500");
+          }
+          return [];
+      } finally {
+          hideLoadingIndicator();
+      }
+    }
+
+    // Função auxiliar para carregar cards na memória e preparar a tela
+    function processLoadedCards(cardsData, isFromCache) {
+        initialCards = cardsData;
+        // Se estamos iniciando agora (cards vazio) ou carregando do cache, atualiza tudo
+        // Se for atualização de rede em segundo plano, atualiza initialCards mas mantém o estudo atual se o usuário já começou
+        if (cards.length === 0 || isFromCache) {
             cards = [...initialCards];
+            
             const hasSavedState = loadFlashcardState();
-            
-            // Reset forçado para garantir limpeza
-            currentCategory = "Todas";
-            cards = [...initialCards];
-            
-            // Se não tinha estado salvo, zera variáveis críticas
             if (!hasSavedState) {
               currentCard = 0;
               showingFront = true;
               cardAccuracy = {};
               isReviewErrorsMode = false;
+              currentCategory = "Todas"; // Garante reset limpo
             }
             
             loadStatsFromStorage();
@@ -1951,19 +2101,10 @@ loadFlashcardsFromGoogleSheet(SHEET_ID, GID).then(() => {
             const btn = document.getElementById("settingsBtn");
             if (btn) {
                 btn.classList.add("settings-highlight");
-                setTimeout(() => {
-                    btn.classList.remove("settings-highlight");
-                }, 10000);
+                setTimeout(() => btn.classList.remove("settings-highlight"), 10000);
             }
             updateCard();
         }
-        return loadedCards;
-      } catch (error) {
-          console.error("Erro ao carregar os flashcards:", error);
-          document.getElementById("flashcard-content").textContent = `Erro ao carregar flashcards: ${error.message}`;
-          cardCounter.textContent = "0/0";
-          return [];
-      }
     }
 
     function filterByCategory(category, skipSave = false) {
@@ -2004,16 +2145,40 @@ document.getElementById("focoSelect").style.display = "none";
     }
 
     function updateCard() {
+	stopSpeech(); // <--- ADICIONE ESTA LINHA
       if (!requireAuth() || cards.length === 0 || isFinished) return;
       const card = cards[currentCard];
       const contentElement = document.getElementById("flashcard-content");
-      contentElement.textContent = showingFront ? card.front : card.back;
+      // --- LÓGICA DE CLOZE (OMISSÃO) ---
+      let textToShow = showingFront ? card.front : card.back;
+      
+      // Segurança básica contra injeção de HTML (Sanitize)
+      textToShow = textToShow.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      if (showingFront) {
+          // Na FRENTE: Substitui {{texto}} por uma caixa [...]
+          // Regex explica: Pega tudo entre {{ e }}
+          textToShow = textToShow.replace(/{{(.*?)}}/g, "<span style='background:#333; color:gold; padding:2px 6px; border-radius:4px; border:1px solid #555; cursor:help;' title='Tente lembrar...'>[...]</span>");
+      } else {
+          // No VERSO: Mostra o texto, destacando a resposta em verde
+          // Remove as chaves e pinta o recheio
+          textToShow = textToShow.replace(/{{(.*?)}}/g, "<span style='color:#00ff00; font-weight:bold; border-bottom:1px solid #00ff00;'>$1</span>");
+      }
+      
+      contentElement.innerHTML = textToShow;
+      // ---------------------------------
       // --- ALTERAÇÃO: Contador Relativo (Mostra posição no filtro atual) ---
       // Ex: Mostra "1 / 15" (sendo 15 o total do tópico filtrado)
       const currentPosition = currentCard + 1;
       const totalInFilter = cards.length;
       cardCounter.innerHTML = `<span class="current-card">${currentPosition}</span>/<span>${totalInFilter}</span>`;
-      contentElement.style.fontSize = fontSize + "pt";
+      // ATUALIZA A BARRA DE PROGRESSO
+      const progressPercentage = totalInFilter > 0 ? (currentPosition / totalInFilter) * 100 : 0;
+      const progressBar = document.getElementById("progressBarFill");
+      if(progressBar) {
+          progressBar.style.width = `${progressPercentage}%`;
+      }
+	  contentElement.style.fontSize = fontSize + "pt";
       updateAccuracyButtons();
       if (showingFront) {
         startResponseTimeMeasurement();
@@ -2024,6 +2189,31 @@ document.getElementById("focoSelect").style.display = "none";
       }
       if (isHighlightModeActive) {
         applyAsteriskHighlight();
+      }
+// >>> ADICIONE ESTE BLOCO NO FINAL DA FUNÇÃO updateCard <<<
+      if (typeof isAutoTTS !== 'undefined' && isAutoTTS) {
+          // Pequeno delay para dar tempo do cérebro processar a troca visual
+          setTimeout(() => {
+              speakCard();
+          }, 500);
+      }
+      // >>> FIM DO BLOCO <<<
+      // --- ATUALIZAÇÃO DOS BOTÕES (SRS vs Normal) ---
+      const normalButtons = [document.getElementById('correctButton'), document.getElementById('incorrectButton')];
+      const srsButtonsDiv = document.getElementById('srsButtons');
+
+      if (isSRSMode) {
+          // Modo SRS: Esconde normal, mostra SRS
+          normalButtons.forEach(btn => btn.style.display = 'none');
+          srsButtonsDiv.style.display = 'flex';
+          
+          // Esconde controles que não fazem sentido no SRS
+          document.getElementById('shuffleButton').style.display = 'none';
+      } else {
+          // Modo Normal: Mostra normal, esconde SRS
+          normalButtons.forEach(btn => btn.style.display = 'inline-block');
+          srsButtonsDiv.style.display = 'none';
+          document.getElementById('shuffleButton').style.display = 'inline-block';
       }
     }
 
@@ -2143,6 +2333,7 @@ document.getElementById("focoSelect").style.display = "none";
     }
 
     function markAsCorrect() {
+	triggerVisualFeedback('success');
       if (!requireAuth() || isFinished) return;
       
       const currentOriginalCard = initialCards.indexOf(cards[currentCard]);
@@ -2160,11 +2351,15 @@ document.getElementById("focoSelect").style.display = "none";
     }
 
     function markAsIncorrect() {
+	triggerVisualFeedback('error');
       if (!requireAuth() || isFinished) return;
       
       const currentOriginalCard = initialCards.indexOf(cards[currentCard]);
       
+      // Verifica Sanguessuga e contabiliza erro
       if (currentOriginalCard !== -1) {
+        checkLeech(currentOriginalCard);
+
         if (!cardAccuracy[currentOriginalCard]) {
           cardAccuracy[currentOriginalCard] = { correct: 0, incorrect: 0 };
         }
@@ -2807,8 +3002,243 @@ function changeTextColor(color) {
       reviewIncorrectCards();
     }
 
+// --- IMPLEMENTAÇÃO DE GESTOS (SWIPE) ---
+    const touchArea = document.getElementById('card-container');
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+
+    if (touchArea) {
+        touchArea.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, {passive: true});
+
+        touchArea.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            handleGesture();
+        }, {passive: true});
+    }
+
+    function handleGesture() {
+        const xDiff = touchEndX - touchStartX;
+        const yDiff = touchEndY - touchStartY;
+        
+        // Ignora se for scroll vertical
+        if (Math.abs(yDiff) > Math.abs(xDiff)) return;
+
+        // Sensibilidade mínima de 50px
+        if (Math.abs(xDiff) < 50) {
+            // Se o movimento for muito curto, consideramos um "Toque" simples
+            if (Math.abs(xDiff) < 10 && Math.abs(yDiff) < 10) {
+                flipCard(); 
+            }
+            return;
+        }
+
+        if (xDiff > 0) {
+		triggerVisualFeedback('success');
+            // SWIPE DIREITA (→) = Acertei / Avançar
+            showSwipeFeedback('right');
+            if (!showingFront) {
+                 if (typeof isSRSMode !== 'undefined' && isSRSMode) rateCardSRS('good', null, '#90ee90');
+                 else markAsCorrect();
+            } else {
+                 flipCard();
+            }
+        } else {
+		triggerVisualFeedback('error');
+            // SWIPE ESQUERDA (←) = Errei / Repetir
+            showSwipeFeedback('left');
+            if (!showingFront) {
+                 if (typeof isSRSMode !== 'undefined' && isSRSMode) rateCardSRS('again', null, '#ff5555');
+                 else markAsIncorrect();
+            } else {
+                 flipCard();
+            }
+        }
+    }
+// --- FUNÇÃO DE FEEDBACK VISUAL (BORDAS) ---
+    function triggerVisualFeedback(type) {
+        const container = document.body; // Aplica na tela toda
+        // Remove classes antigas para permitir reiniciar a animação
+        container.classList.remove('flash-success-anim', 'flash-error-anim');
+        
+        // Força um reflow (truque para reiniciar animação CSS)
+        void container.offsetWidth;
+        
+        if (type === 'success') {
+            container.classList.add('flash-success-anim');
+        } else {
+            container.classList.add('flash-error-anim');
+        }
+        
+        // Limpa a classe após terminar
+        setTimeout(() => {
+            container.classList.remove('flash-success-anim', 'flash-error-anim');
+        }, 400);
+    }
+    // Feedback Visual do Swipe
+    function showSwipeFeedback(direction) {
+        const feedback = document.createElement('div');
+        feedback.innerHTML = direction === 'right' ? '✅' : '❌';
+        feedback.style.position = 'absolute';
+        feedback.style.top = '50%';
+        feedback.style.left = direction === 'right' ? '70%' : '30%';
+        feedback.style.transform = 'translate(-50%, -50%)';
+        feedback.style.fontSize = '5em';
+        feedback.style.opacity = '0.8';
+        feedback.style.zIndex = '1000';
+        feedback.style.pointerEvents = 'none';
+        feedback.style.transition = 'opacity 0.5s';
+        
+        const container = document.getElementById('card-container');
+        if(container) container.appendChild(feedback);
+        
+        setTimeout(() => {
+            feedback.style.opacity = '0';
+            setTimeout(() => feedback.remove(), 500);
+        }, 200);
+    }
+	// --- FUNÇÃO ANTI-SANGUESSUGA (LEECH) ---
+    function checkLeech(cardIndex) {
+        // Segurança: verifica se o card existe
+        if (!initialCards || !initialCards[cardIndex]) return;
+
+        const cardId = generateCardId(initialCards[cardIndex].front);
+        
+        // Garante que o objeto de progresso existe
+        if (!userSRSProgress[cardId]) userSRSProgress[cardId] = {};
+        if (!userSRSProgress[cardId].lapses) userSRSProgress[cardId].lapses = 0;
+        
+        // Incrementa o contador de erros (lapses)
+        userSRSProgress[cardId].lapses++;
+        
+        // LIMITE DE 5 ERROS
+        if (userSRSProgress[cardId].lapses >= 5) {
+            // 1. Alerta na tela (Modal)
+            showCustomAlert(`⚠️ CUIDADO: SANGUESSUGA! ⚠️\n\nVocê já errou este card ${userSRSProgress[cardId].lapses} vezes.\n\nSugestão: Não tente decorar à força. Volte na teoria e entenda o conceito.`);
+            
+            // 2. Marca visual no card atual (Borda vermelha e aviso)
+            const content = document.getElementById("flashcard-content");
+            if (content) {
+                content.style.border = "3px solid #ff5555";
+                content.innerHTML += "<br><br><span style='color:#ff5555; font-size:0.9em; font-weight:bold; background:rgba(0,0,0,0.8); padding:5px; border-radius:5px;'>⚠️ [REVISAR TEORIA]</span>";
+            }
+        }
+    }
+	// --- TEXT-TO-SPEECH (LEITURA CONTÍNUA) ---
+    let isAutoTTS = false; // Estado do Modo Automático
+    const synth = window.speechSynthesis;
+    let voices = [];
+    
+    function populateVoiceList() {
+        if(typeof speechSynthesis === 'undefined') return;
+        voices = speechSynthesis.getVoices();
+        const voiceSelect = document.getElementById('voiceSelect');
+        if(!voiceSelect) return;
+        
+        voiceSelect.innerHTML = '';
+        voices.forEach((voice, index) => {
+            const option = document.createElement('option');
+            option.textContent = `${voice.name} (${voice.lang})`;
+            if(voice.default) option.textContent += ' -- PADRÃO';
+            option.setAttribute('data-lang', voice.lang);
+            option.setAttribute('data-name', voice.name);
+            option.value = index;
+            voiceSelect.appendChild(option);
+        });
+        const ptIndex = voices.findIndex(v => v.lang.includes('pt-BR') || v.lang.includes('pt_BR'));
+        if (ptIndex !== -1) voiceSelect.selectedIndex = ptIndex;
+    }
+
+    if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = populateVoiceList;
+    }
+    
+    const settingsBtn = document.getElementById('settingsBtn');
+    if(settingsBtn) settingsBtn.addEventListener('click', populateVoiceList);
+
+    function toggleSpeech() {
+        isAutoTTS = !isAutoTTS; // Liga ou Desliga o modo
+        
+        const btn = document.getElementById('ttsButton');
+        
+        if (isAutoTTS) {
+            // LIGOU
+            if(btn) {
+                btn.style.color = "#00ff00";
+                btn.style.textShadow = "0 0 10px #00ff00"; // Brilho para indicar ativo
+            }
+            showFeedback("Leitura Automática: LIGADA 🗣️", "#00ff00");
+            speakCard(); // Começa a ler imediatamente
+        } else {
+            // DESLIGOU
+            if(btn) {
+                btn.style.color = "white";
+                btn.style.textShadow = "none";
+            }
+            showFeedback("Leitura Automática: DESLIGADA 🔇", "white");
+            synth.cancel(); // Para de falar na hora
+        }
+    }
+
+    function speakCard() {
+        // Só lê se o modo automático estiver ligado ou se for chamado manualmente
+        if (!initialCards || initialCards.length === 0) return;
+        
+        // Se o modo automático foi desligado, não lê
+        if (!isAutoTTS) return; 
+
+        // Para qualquer leitura anterior para não sobrepor
+        synth.cancel();
+
+        let textToRead = showingFront ? cards[currentCard].front : cards[currentCard].back;
+        
+        // Limpeza de texto para leitura fluida
+        textToRead = textToRead.replace(/{{|}}/g, "")
+                             .replace(/\*/g, "")
+                             .replace(/<[^>]*>/g, "")
+                             .replace(/&nbsp;/g, " ");
+
+        const utterance = new SpeechSynthesisUtterance(textToRead);
+        
+        // Configurações do Menu
+        const voiceSelect = document.getElementById('voiceSelect');
+        const rateRange = document.getElementById('rateRange');
+        
+        if (voiceSelect && voices.length > 0) {
+            const selectedIndex = voiceSelect.value;
+            if(voices[selectedIndex]) utterance.voice = voices[selectedIndex];
+        }
+
+        if (rateRange) {
+            utterance.rate = parseFloat(rateRange.value) || 1.1;
+        } else {
+            utterance.rate = 1.1;
+        }
+        
+        // IMPORTANTE: Não mudamos a cor do botão aqui para não piscar. 
+        // A cor agora é controlada pelo estado isAutoTTS em toggleSpeech.
+
+        synth.speak(utterance);
+    }
+
+    function stopSpeech() {
+        // Esta função agora apenas cancela o áudio atual, 
+        // mas NÃO desliga o modo automático (isAutoTTS)
+        if (synth.speaking) {
+            synth.cancel();
+        }
+    }
     // --- INICIALIZAÇÃO ---
    document.addEventListener("keydown", (e) => {
+   if (e.key === "s" || e.key === "S") {
+    e.preventDefault();
+    toggleSpeech();
+  }
   const loginModal = document.getElementById('loginModal');
   if (window.getComputedStyle(loginModal).display === 'flex') {
     return;
@@ -2847,13 +3277,44 @@ function changeTextColor(color) {
     e.preventDefault();
     reviewAndRetreat();
   }
+  // --- ATALHOS DE RESPOSTA (INTELIGENTES) ---
   if (e.key === "1") {
     e.preventDefault();
-    markAsCorrect();
+    if (typeof isSRSMode !== 'undefined' && isSRSMode) {
+        // Modo SRS: Tecla 1 = Errei (Again)
+        const btn = document.getElementById('btnAgain');
+        rateCardSRS('again', btn, '#ff5555');
+    } else {
+        // Modo Normal: Tecla 1 = Acertei
+        markAsCorrect();
+    }
   }
   if (e.key === "2") {
     e.preventDefault();
-    markAsIncorrect();
+    if (typeof isSRSMode !== 'undefined' && isSRSMode) {
+        // Modo SRS: Tecla 2 = Difícil (Hard)
+        const btn = document.getElementById('btnHard');
+        rateCardSRS('hard', btn, '#ffa500');
+    } else {
+        // Modo Normal: Tecla 2 = Errei
+        markAsIncorrect();
+    }
+  }
+  if (e.key === "3") {
+    e.preventDefault();
+    if (typeof isSRSMode !== 'undefined' && isSRSMode) {
+        // Modo SRS: Tecla 3 = Bom (Good)
+        const btn = document.getElementById('btnGood');
+        rateCardSRS('good', btn, '#90ee90');
+    }
+  }
+  if (e.key === "4") {
+    e.preventDefault();
+    if (typeof isSRSMode !== 'undefined' && isSRSMode) {
+        // Modo SRS: Tecla 4 = Fácil (Easy)
+        const btn = document.getElementById('btnEasy');
+        rateCardSRS('easy', btn, '#00ff00');
+    }
   }
   if (e.key === " ") {
     e.preventDefault();
@@ -2921,9 +3382,12 @@ function changeTextColor(color) {
           result += `<span class="${className}">${part}</span>`;
         } else {
           // Escapa HTML para evitar injeção acidental
-          result += part.replace(/&/g, '&amp;')
-                        .replace(/</g, '<')
-                        .replace(/>/g, '>');
+result += part.replace(/&/g, '&amp;') 
+             .replace(/</g, '&lt;') 
+             .replace(/>/g, '&gt;') 
+             .replace(/"/g, '&quot;') 
+             .replace(/'/g, '&#039;')
+             .replace(/\*/g, '&#42;'); // Trata * solto como caractere literal
         }
       });
 
@@ -3085,8 +3549,18 @@ function updateAutoAdvanceUI() {
           document.getElementById('simuladoOptions').style.display = 'block';
       } else if (mode === 'provas') {
           document.getElementById('provasOptions').style.display = 'block';
-      } else if (mode === 'livre') {
+     } else if (mode === 'livre') {
           document.getElementById('livreOptions').style.display = 'block';
+      }
+
+      // LÓGICA AUTOMÁTICA PARA SRS
+      if (mode === 'srs') {
+        // Marca automaticamente a opção "Sequencial" na etapa 3
+        const seqBtn = document.querySelector('input[name="weightMode"][value="sequencial"]');
+        if (seqBtn) {
+            seqBtn.checked = true;
+            switchWeightMode('sequencial'); // Garante que esconde opções de peso mínimo
+        }
       }
     }
 
@@ -3113,14 +3587,13 @@ function startCustomStudy() {
     return;
   }
   
-  // 2. Validação de Segurança: O usuário selecionou um peso?
+  // 2. Validação de Segurança: O usuário selecionou um peso? (Exceto se for SRS)
   const weightEl = document.querySelector('input[name="weightMode"]:checked');
-  if (!weightEl) {
+  if (!weightEl && modeEl.value !== 'srs') { 
     // Substituído alert() por showCustomAlert()
     showCustomAlert("Por favor, selecione uma opção de Pesos (Item 3) para continuar.");
     return;
   }
-
   const studyMode = modeEl.value;
   
   closeSettingsModal();
@@ -3185,7 +3658,34 @@ function startCustomStudy() {
            else break;
        }
        cards = Array.from(selectedSet);
-
+// --- NOVO MODO: SRS (Repetição Espaçada) ---
+    } else if (studyMode === 'srs') {
+        isSRSMode = true;
+        const now = new Date();
+        
+        // Filtra: Cards sem registro (Novos) OU Cards Vencidos (Data <= Hoje)
+        cards = initialCards.filter(card => {
+            const id = generateCardId(card.front);
+            const progress = userSRSProgress[id];
+            
+            if (!progress || !progress.nextReview) return true; // É novo
+            return new Date(progress.nextReview) <= now; // Venceu
+        });
+        
+        if (cards.length === 0) {
+            showCustomAlert("Parabéns! Você está em dia com as revisões. Nada para estudar agora.");
+            hideLoadingIndicator();
+            return;
+        }
+        
+        // Ordena: Vencidos há mais tempo aparecem primeiro
+        cards.sort((a, b) => {
+             const idA = generateCardId(a.front);
+             const idB = generateCardId(b.front);
+             const dateA = userSRSProgress[idA] ? new Date(userSRSProgress[idA].nextReview) : new Date(0);
+             const dateB = userSRSProgress[idB] ? new Date(userSRSProgress[idB].nextReview) : new Date(0);
+             return dateA - dateB;
+        });
     // --- MODO 3: PROVAS ---
     } else { 
       filteredCards = initialCards.filter(card => card.tipo === 'Prova');
@@ -3214,7 +3714,18 @@ function startCustomStudy() {
       showingFront = true;
       isFinished = false;
       // Embaralha final para garantir mistura
-      cards.sort(() => Math.random() - 0.5);
+      currentCard = 0;
+      showingFront = true;
+      isFinished = false;
+      
+      // LÓGICA DE EMBARALHAMENTO
+      // Só embaralha se o modo NÃO for "sequencial"
+      const weightMode = document.querySelector('input[name="weightMode"]:checked').value;
+      
+      if (weightMode !== 'sequencial') {
+          cards.sort(() => Math.random() - 0.5);
+      }
+      
       updateCard();
       saveFlashcardState();
     }
@@ -3588,6 +4099,201 @@ function startCustomStudy() {
       updateCard();
       saveFlashcardState();
     }
+	// --- LÓGICA DO SISTEMA DE REPETIÇÃO ESPAÇADA (SRS) ---
+
+    let userSRSProgress = {}; // Guarda o progresso carregado do servidor
+    let isSRSMode = false;    // Indica se estamos no modo SRS
+
+    // 1. Gerador de ID Único (Hash baseada na Pergunta)
+    // Garante que a pergunta "O que é Crase?" tenha sempre o mesmo ID, mesmo se mudar de linha.
+    function generateCardId(text) {
+      let hash = 0, i, chr;
+      if (text.length === 0) return "ID_NULL";
+      for (i = 0; i < text.length; i++) {
+        chr = text.charCodeAt(i);
+        hash = ((hash << 5) - hash) + chr;
+        hash |= 0; // Converte para 32bit integer
+      }
+      return "ID_" + Math.abs(hash);
+    }
+    // 2. Carregar Dados Completos (SRS + Armazem)
+    async function loadAllDataFromBackend(email) {
+      try {
+        // Envia o SHEET_ID na URL
+        const url = `${SRS_BACKEND_URL}?action=loadAllData&email=${encodeURIComponent(email)}&sheetId=${SHEET_ID}`;
+        const response = await fetch(url);
+        const json = await response.json();
+        
+        if (json.result === "success") {
+           userSRSProgress = json.progress || {};
+           
+           // Lógica do Armazém (Continuar de onde parou)
+           if (json.position && json.position.index > 0) {
+               // Salva numa variável global para usarmos depois do login
+               window.savedPosition = json.position;
+               console.log("Posição salva encontrada:", window.savedPosition);
+           }
+        }
+      } catch (e) {
+        console.error("Erro ao carregar dados:", e);
+      }
+    }
+
+    // 3. Função dos Botões SRS (Errei, Difícil, Bom, Fácil)
+    // 3. Função dos Botões SRS (Atualizada com Animação)
+    function rateCardSRS(rating, btnElement, colorHex) {
+	if (rating === 'again' || rating === 'hard') {
+          triggerVisualFeedback('error');
+      } else {
+          triggerVisualFeedback('success');
+      }
+      // ----------------------------
+      if (!requireAuth() || cards.length === 0) return;
+
+      // --- ANIMAÇÃO VISUAL (PISCAR) ---
+      if (btnElement) {
+        btnElement.style.setProperty('--blink-color', colorHex);
+        btnElement.classList.add('blink-active');
+        setTimeout(() => {
+          btnElement.classList.remove('blink-active');
+        }, 500);
+      }
+
+      const card = cards[currentCard];
+      const cardId = generateCardId(card.front);
+      
+      // Pega estado atual
+      let state = userSRSProgress[cardId] || { interval: 0, easeFactor: 2.5, nextReview: null };
+      
+      let newInterval = 0;
+      let newEase = state.easeFactor;
+      let nextReviewDate = new Date(); 
+
+      // Lógica SM-2
+      if (rating === 'again') { 
+	  // >>> INSERIR ESTAS 4 LINHAS AQUI <<<
+        const realIndex = initialCards.indexOf(cards[currentCard]);
+        if (realIndex !== -1) {
+            checkLeech(realIndex);
+        }
+        newInterval = 0; 
+        newEase = Math.max(1.3, newEase - 0.2);
+        nextReviewDate.setMinutes(nextReviewDate.getMinutes() + 10); 
+      } else if (rating === 'hard') {
+        newInterval = state.interval === 0 ? 1 : Math.round(state.interval * 1.2);
+        newEase = Math.max(1.3, newEase - 0.15);
+        nextReviewDate.setDate(nextReviewDate.getDate() + (newInterval || 2)); 
+      } else if (rating === 'good') {
+        newInterval = state.interval === 0 ? 1 : Math.round(state.interval * 2.5);
+        nextReviewDate.setDate(nextReviewDate.getDate() + (newInterval || 4)); 
+      } else if (rating === 'easy') {
+        newInterval = state.interval === 0 ? 4 : Math.round(state.interval * newEase * 1.3);
+        newEase += 0.15;
+        nextReviewDate.setDate(nextReviewDate.getDate() + (newInterval || 7)); 
+      }
+
+      // Atualiza Memória Local
+      userSRSProgress[cardId] = {
+        interval: newInterval,
+        easeFactor: newEase,
+        nextReview: nextReviewDate.toISOString()
+      };
+
+      console.log(`SRS Atualizado: ${rating} | Próxima: ${nextReviewDate.toLocaleString()}`);
+
+      // Envia para o Backend
+      saveSRSToBackend(cardId, nextReviewDate.toISOString(), newInterval, newEase);
+
+      // Pequeno delay para ver a animação antes de trocar o card
+      setTimeout(() => {
+          nextCard();
+      }, 200);
+    }
+   // 4. Salvar no Backend (Atualizada com ID Dinâmico e no-cors)
+    function saveSRSToBackend(cardId, nextReview, interval, ease) {
+      if (!userEmail) return;
+
+      const formData = new URLSearchParams();
+      formData.append('action', 'saveProgress');
+      formData.append('sheetId', SHEET_ID); // <--- AQUI ESTÁ A MÁGICA
+      formData.append('email', userEmail);
+      formData.append('cardId', cardId);
+      formData.append('nextReview', nextReview);
+      formData.append('interval', interval);
+      formData.append('easeFactor', ease);
+
+      fetch(SRS_BACKEND_URL, {
+        method: 'POST',
+        mode: 'no-cors', 
+        body: formData
+      }).catch(err => console.error("Erro ao salvar:", err));
+    }
+	// 5. Salvar Posição (Armazém)
+    function savePositionToBackend() {
+      if (!userEmail || cards.length === 0) return;
+
+      // ATENÇÃO: Precisamos descobrir o índice REAL na planilha (initialCards),
+      // e não apenas o índice do filtro atual (cards).
+      const currentCardObj = cards[currentCard];
+      const realIndex = initialCards.indexOf(currentCardObj);
+
+      if (realIndex === -1) return; // Segurança
+
+      const formData = new URLSearchParams();
+      formData.append('action', 'savePosition');
+      formData.append('sheetId', SHEET_ID); // ID dinâmico
+      formData.append('email', userEmail);
+      formData.append('cardIndex', realIndex);
+      
+      // Salva qual modo você estava usando para tentar restaurar depois (opcional)
+      const currentMode = document.querySelector('input[name="studyMode"]:checked')?.value || "sequencial";
+      formData.append('modo', currentMode);
+
+      console.log(`Salvando posição: Card Global #${realIndex} (${currentMode})`);
+
+      // 'keepalive: true' é vital para salvar quando o usuário está fechando a aba
+      fetch(SRS_BACKEND_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        keepalive: true, 
+        body: formData
+      }).catch(err => console.error("Erro ao salvar posição:", err));
+    }
+	// 6. Verificar e Perguntar se quer continuar (Resume)
+    function checkForSavedPosition() {
+        // Verifica se existe algo salvo e se é válido
+        if (window.savedPosition && window.savedPosition.index > 0 && window.savedPosition.index < cards.length) {
+            
+            const savedIndex = window.savedPosition.index;
+            const card = cards[savedIndex];
+            
+            // Texto curto para mostrar no alerta
+            let cardText = card.front.length > 60 ? card.front.substring(0, 60) + "..." : card.front;
+
+            // Usa o confirm nativo do navegador (Sim/Cancelar)
+            const userWantsToResume = confirm(`Bem-vindo de volta!\n\nVocê parou no Card ${savedIndex + 1}:\n"${cardText}"\n\nDeseja continuar de onde parou?`);
+
+            if (userWantsToResume) {
+                currentCard = savedIndex;
+                showingFront = true;
+                
+                // Se estava no modo SRS, podemos reativar visualmente (opcional)
+                if (window.savedPosition.modo === 'srs') {
+                    // Apenas avisa, mas mantém no modo atual para evitar conflitos de filtro
+                    console.log("Retomando em posição SRS");
+                }
+
+                updateCard();
+                showFeedback("Continuando estudos... 🚀", "#00ff00");
+            }
+        }
+    }
+	// Tenta salvar se o usuário fechar a aba ou o navegador
+    window.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            savePositionToBackend();
+        }
+    });
   </script>
 </body>
 </html>

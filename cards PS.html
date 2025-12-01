@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Chico Concursos - Flashcards com Progresso</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <link rel="apple-touch-icon" href="https://img.icons8.com/color/96/books.png"> 
+  <link rel="icon" type="image/png" href="https://img.icons8.com/color/96/books.png">
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
@@ -1077,14 +1082,136 @@
     .flash-error-anim {
       animation: flash-red 0.4s ease-out;
     }
+/* --- ESTILO DO MODAL DE REPORTE --- */
+    #reportModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 20000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(2px);
+    }
+    #reportModalContent {
+      background: #222;
+      color: white;
+      padding: 25px;
+      border-radius: 10px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+      border: 1px solid #444;
+      text-align: center;
+    }
+    #reportComment {
+      width: 100%;
+      padding: 10px;
+      margin: 15px 0;
+      border-radius: 5px;
+      border: 1px solid #FFD700;
+      background-color: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 1em;
+      resize: vertical;
+    }
+   /* --- CSS CORRIGIDO PARA BOTÕES DO REPORT --- */
+    .report-actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;       /* Espaço entre os botões */
+        margin-top: 20px;
+        width: 100%;
+    }
+
+    /* Ajuste para o botão ENVIAR dentro do reporte */
+    .report-actions .custom-alert-btn {
+        flex: 1;         /* Ocupa 50% do espaço */
+        margin-top: 0;   /* Remove margem antiga para alinhar */
+        width: auto;     /* Destrava a largura */
+        padding: 12px 0; /* Altura confortável */
+    }
+
+    /* Estilo Completo para o botão CANCELAR */
+    .report-actions .close-button {
+        flex: 1;         /* Ocupa 50% do espaço (igual ao Enviar) */
+        margin-top: 0;
+        padding: 8px 0; /* Mesma altura do Enviar */
+        font-size: 1.1em;
+        font-weight: bold;
+        border-radius: 5px;
+        cursor: pointer;
+        
+        /* Visual: Fundo escuro com borda dourada */
+        background-color: #1a1a1a; 
+        border: 2px solid #444;
+        color: #ccc;
+        
+        transition: all 0.3s ease;
+    }
+
+    /* Efeito ao passar o mouse no Cancelar */
+    .report-actions .close-button:hover {
+        border-color: #FFD700;
+        color: #FFD700;
+        background-color: #333;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    }
+	/* --- SUPORTE A IMAGENS E ZOOM --- */
+    
+    /* 1. Faz a imagem caber no card e parecer "clicável" */
+    #flashcard-content img {
+      max-width: 100%;       /* Nunca excede a largura do card */
+      height: auto;          /* Mantém proporção */
+      border-radius: 8px;    /* Cantos arredondados */
+      margin-top: 15px;
+      cursor: zoom-in;       /* Cursor de lupa */
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5); /* Sombra elegante */
+      transition: transform 0.2s ease;
+    }
+    
+    /* Pequeno efeito ao passar o mouse */
+    #flashcard-content img:hover {
+      transform: scale(1.02);
+      border: 1px solid gold;
+    }
+
+    /* 2. A Janela de Zoom (Lightbox) */
+    #lightboxModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95); /* Fundo bem escuro para foco */
+      z-index: 25000; /* Acima de TUDO */
+      display: none;
+      justify-content: center;
+      align-items: center;
+      cursor: zoom-out; /* Cursor indica que clica para fechar */
+      backdrop-filter: blur(5px);
+    }
+
+    #lightboxImage {
+      max-width: 95%;
+      max-height: 95vh; /* Ocupa quase toda a altura da tela */
+      border: 2px solid gold;
+      border-radius: 5px;
+      box-shadow: 0 0 50px rgba(255, 215, 0, 0.2);
+      object-fit: contain;
+      animation: popIn 0.3s ease;
+    }
   </style>
 </head>
 <body>
  <div class="top-bar">
-    <button id="settingsBtn" class="tooltip" data-tooltip="Configurações" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="openSettingsModal()">⚙️</button>
-    
     <button class="tooltip" data-tooltip="Ajuda" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleHelpModal()">❓</button>
-    
+     <button id="settingsBtn" class="tooltip" data-tooltip="Configurações" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="openSettingsModal()">⚙️</button>
+	<button class="tooltip" data-tooltip="Reportar Erro" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="reportCurrentCard()">⚠️</button>
     <button class="tooltip" data-tooltip="Cor do cartão" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleCardColorMenu()">🖌️</button>
     <select id="cardColor" onchange="changeCardColor(this.value)" style="display:none;">
      <option value="white">Branco</option>
@@ -1113,6 +1240,7 @@
     <button class="tooltip" data-tooltip="Diminuir fonte" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="adjustFontSize(-1)">A-</button>
     
     <button class="tooltip" data-tooltip="Destacar *palavras*" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleHighlightAsterisks()">✨</button>
+	<span id="streakDisplay" class="tooltip" data-tooltip="Ofensiva: Dias seguidos estudando!" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="color: #ff4500; font-weight: bold; margin-right: 5px; text-shadow: 0 0 5px rgba(255, 69, 0, 0.5);">🔥 0</span>
     
     <span class="tooltip" data-tooltip="Tempo de revisão" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="resetTimer()">⏱️ <span id="timer">00:00</span></span>
     
@@ -1186,6 +1314,9 @@
     <div id="helpModalContent">
       <h2>Ajuda - Significado dos Ícones</h2>
       <div id="iconLegend">
+	    <p><span>⚙️</span> Configurações: Define o Modo de Estudo (Simulado, SRS, Provas), Pesos e Voz.</p>
+        <p><span>⚠️</span> Reportar Erro: Abre uma janela para informar falhas no card sem parar o estudo.</p>
+        <p><span>🗣️</span> Ler em Voz Alta: Liga/Desliga a leitura automática do texto (Atalho removido da tecla S).</p>
         <p><span>🖌️</span> Cor do cartão: Altera a cor de fundo do flashcard.</p>
         <p><span>🔤</span> Cor da fonte: Altera a cor do texto do flashcard.</p>
         <p><span>A+</span> Aumentar fonte: Aumenta o tamanho da letra do flashcard.</p>
@@ -1467,6 +1598,23 @@
       <button class="login-button" onclick="location.reload()">Fazer Login Novamente</button>
     </div>
   </div>
+  <div id="reportModal">
+    <div id="reportModalContent">
+      <h3 style="color: #FFD700; margin-bottom: 10px;">⚠️ Reportar Erro</h3>
+      <p>O que há de errado com este card?</p>
+      
+      <textarea id="reportComment" rows="4" placeholder="Ex: Erro de português, Gabarito errado, Lei desatualizada..."></textarea>
+      
+      <div class="report-actions">
+        <button class="custom-alert-btn" onclick="submitReport()">ENVIAR</button>
+        <button class="close-button" onclick="closeReportModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+  <div id="lightboxModal" onclick="closeLightbox()">
+    <img id="lightboxImage" src="" alt="Zoom">
+    <p style="position: absolute; bottom: 20px; color: #888; font-size: 0.9em;">Toque em qualquer lugar para fechar</p>
+  </div>
   <div id="customAlertModal">
     <div class="custom-alert-box">
       <h3 style="color: #FFD700; margin-bottom: 15px; font-size: 1.5em;">⚠️ Atenção</h3>
@@ -1612,6 +1760,7 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
       document.getElementById('loginModal').style.display = 'none';
       isAuthenticated = true;
       document.getElementById("flashcard-content").textContent = "Carregando flashcards...";
+	  checkAndIncrementStreak();
     }
 
     function showLoadingIndicator(message = "Carregando...") {
@@ -1818,6 +1967,7 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
           // 3. Tudo pronto: Esconde loading e Pergunta se quer continuar
           hideLoadingIndicator();
           checkForSavedPosition();
+		  checkAndIncrementStreak();
       });
   } else {
     document.getElementById('loginModal').style.display = 'flex';
@@ -3235,10 +3385,7 @@ function changeTextColor(color) {
     }
     // --- INICIALIZAÇÃO ---
    document.addEventListener("keydown", (e) => {
-   if (e.key === "s" || e.key === "S") {
-    e.preventDefault();
-    toggleSpeech();
-  }
+  
   const loginModal = document.getElementById('loginModal');
   if (window.getComputedStyle(loginModal).display === 'flex') {
     return;
@@ -3248,7 +3395,10 @@ function changeTextColor(color) {
   if (isInputFocused) {
     return;
   }
-
+ if (e.key === "s" || e.key === "S") {
+    e.preventDefault();
+    toggleSpeech();
+  }
   // --- Atalhos do temporizador (devem vir ANTES dos demais) ---
   if (e.key === "p" || e.key === "P") {
     e.preventDefault();
@@ -3618,44 +3768,41 @@ function startCustomStudy() {
 
     // --- MODO 2: ESTUDO LIVRE (Aleatório Geral) ---
     } else if (studyMode === 'livre') {
-       // Pega todas as questões que NÃO são de prova (ou inclui provas se preferir)
-       // Aqui vamos pegar tudo que não é explicitamente 'prova' fechada, ou tudo mesmo.
-       // Vamos usar o mesmo pool do simulado:
        const fullPool = initialCards.filter(card => !card.tipo.includes('prova'));
-       
        const qtdDesejada = parseInt(document.getElementById('livreQuantity').value) || 20;
        
-       // Usa a função de geração, mas fingimos que é uma única "disciplina gigante"
-       // Ou simplesmente embaralhamos tudo e pegamos X.
-       // Vamos usar a lógica de PESO para ser inteligente.
-       
-       // Cria um config fake para usar a função generateCustomDeck? Não, melhor fazer direto:
-       let weightedPool = [];
-       const isFocusEnabled = document.getElementById('enableFocusMode').checked;
+       // Verifica qual modo de peso/ordem foi escolhido no Item 3
+       const weightMode = document.querySelector('input[name="weightMode"]:checked').value;
 
-       fullPool.forEach(card => {
-          let finalWeight = card.peso || 1;
-          // Aplica inteligência se estiver ativo
-          if (isFocusEnabled && userLearningStats.topicWeights && userLearningStats.topicWeights[card.topico]) {
-              finalWeight += Math.floor(userLearningStats.topicWeights[card.topico]);
-          }
-          finalWeight = Math.min(finalWeight, 10);
+       if (weightMode === 'sequencial') {
+           // SE FOR SEQUENCIAL: Pega as primeiras X questões na ordem exata da planilha
+           cards = fullPool.slice(0, qtdDesejada);
+       } else {
+           // SE FOR ALEATÓRIO/PONDERADO: Faz o sorteio baseado nos pesos
+           let weightedPool = [];
+           const isFocusEnabled = document.getElementById('enableFocusMode').checked;
 
-          // Adiciona ao pool N vezes baseado no peso
-          for(let i=0; i<finalWeight; i++) weightedPool.push(card);
-       });
+           fullPool.forEach(card => {
+              let finalWeight = card.peso || 1;
+              if (isFocusEnabled && userLearningStats.topicWeights && userLearningStats.topicWeights[card.topico]) {
+                  finalWeight += Math.floor(userLearningStats.topicWeights[card.topico]);
+              }
+              finalWeight = Math.min(finalWeight, 10);
+              for(let i=0; i<finalWeight; i++) weightedPool.push(card);
+           });
 
-       // Embaralha o pool gigante
-       for (let i = weightedPool.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [weightedPool[i], weightedPool[j]] = [weightedPool[j], weightedPool[i]];
-       }
+           // Embaralha o pool para sorteio
+           for (let i = weightedPool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [weightedPool[i], weightedPool[j]] = [weightedPool[j], weightedPool[i]];
+           }
 
-       // Seleciona únicos até a quantidade
-       const selectedSet = new Set();
-       for (const c of weightedPool) {
-           if (selectedSet.size < qtdDesejada) selectedSet.add(c);
-           else break;
+           const selectedSet = new Set();
+           for (const c of weightedPool) {
+               if (selectedSet.size < qtdDesejada) selectedSet.add(c);
+               else break;
+           }
+           cards = Array.from(selectedSet);
        }
        cards = Array.from(selectedSet);
 // --- NOVO MODO: SRS (Repetição Espaçada) ---
@@ -3721,11 +3868,10 @@ function startCustomStudy() {
       // LÓGICA DE EMBARALHAMENTO
       // Só embaralha se o modo NÃO for "sequencial"
       const weightMode = document.querySelector('input[name="weightMode"]:checked').value;
-      
-      if (weightMode !== 'sequencial') {
-          cards.sort(() => Math.random() - 0.5);
+     if (weightMode !== 'sequencial') {
+          // Usa o novo sistema inteligente em vez do aleatório simples
+          cards = smartShuffle(cards);
       }
-      
       updateCard();
       saveFlashcardState();
     }
@@ -4104,13 +4250,18 @@ function startCustomStudy() {
     let userSRSProgress = {}; // Guarda o progresso carregado do servidor
     let isSRSMode = false;    // Indica se estamos no modo SRS
 
-    // 1. Gerador de ID Único (Hash baseada na Pergunta)
-    // Garante que a pergunta "O que é Crase?" tenha sempre o mesmo ID, mesmo se mudar de linha.
+    // 1. Gerador de ID Único (Robustez Aumentada)
+    // Agora ignora maiúsculas, acentos e espaços extras para evitar perda de progresso ao corrigir erros simples.
     function generateCardId(text) {
+      if (!text || text.length === 0) return "ID_NULL";
+
+      // Normaliza: Remove acentos, espaços extras e coloca em minúsculo
+      // Ex: "Constituição" vira "constituicao"
+      const cleanText = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
       let hash = 0, i, chr;
-      if (text.length === 0) return "ID_NULL";
-      for (i = 0; i < text.length; i++) {
-        chr = text.charCodeAt(i);
+      for (i = 0; i < cleanText.length; i++) {
+        chr = cleanText.charCodeAt(i);
         hash = ((hash << 5) - hash) + chr;
         hash |= 0; // Converte para 32bit integer
       }
@@ -4169,27 +4320,41 @@ function startCustomStudy() {
       let newEase = state.easeFactor;
       let nextReviewDate = new Date(); 
 
-      // Lógica SM-2
+      // --- Lógica SM-2 Melhorada com "Fuzzing" (Variação Aleatória) ---
+      
+      // Função interna para aplicar variação e evitar picos de revisão no mesmo dia
+      const applyFuzz = (val) => {
+          if (val < 3) return val; // Intervalos curtos não sofrem variação
+          const fuzz = Math.ceil(val * 0.05); // Variação de +/- 5%
+          const shift = Math.floor(Math.random() * (fuzz * 2 + 1)) - fuzz;
+          return val + shift;
+      };
+
       if (rating === 'again') { 
-	  // >>> INSERIR ESTAS 4 LINHAS AQUI <<<
+        // Mantém a proteção contra sanguessugas
         const realIndex = initialCards.indexOf(cards[currentCard]);
-        if (realIndex !== -1) {
-            checkLeech(realIndex);
-        }
+        if (realIndex !== -1) checkLeech(realIndex);
+        
         newInterval = 0; 
         newEase = Math.max(1.3, newEase - 0.2);
         nextReviewDate.setMinutes(nextReviewDate.getMinutes() + 10); 
       } else if (rating === 'hard') {
+        // Multiplicador 1.2 (Padrão)
         newInterval = state.interval === 0 ? 1 : Math.round(state.interval * 1.2);
         newEase = Math.max(1.3, newEase - 0.15);
-        nextReviewDate.setDate(nextReviewDate.getDate() + (newInterval || 2)); 
+        newInterval = applyFuzz(newInterval); // Aplica Fuzz
+        nextReviewDate.setDate(nextReviewDate.getDate() + Math.max(1, newInterval)); 
       } else if (rating === 'good') {
-        newInterval = state.interval === 0 ? 1 : Math.round(state.interval * 2.5);
-        nextReviewDate.setDate(nextReviewDate.getDate() + (newInterval || 4)); 
+        // Multiplicador ajustado de 2.5 para 2.4 (Curva mais suave)
+        newInterval = state.interval === 0 ? 1 : Math.round(state.interval * 2.4);
+        newInterval = applyFuzz(newInterval); // Aplica Fuzz
+        nextReviewDate.setDate(nextReviewDate.getDate() + Math.max(1, newInterval)); 
       } else if (rating === 'easy') {
+        // Multiplicador Ease * 1.3 (Padrão) + Bonus
         newInterval = state.interval === 0 ? 4 : Math.round(state.interval * newEase * 1.3);
         newEase += 0.15;
-        nextReviewDate.setDate(nextReviewDate.getDate() + (newInterval || 7)); 
+        newInterval = applyFuzz(newInterval); // Aplica Fuzz
+        nextReviewDate.setDate(nextReviewDate.getDate() + Math.max(4, newInterval)); 
       }
 
       // Atualiza Memória Local
@@ -4294,6 +4459,155 @@ function startCustomStudy() {
             savePositionToBackend();
         }
     });
+	// --- NOVO SISTEMA DE EMBARALHAMENTO INTELIGENTE (INTERLEAVING) ---
+    // --- FUNÇÃO DE REPORTAR ERRO (FLUXO CONTÍNUO) ---
+   // --- NOVAS FUNÇÕES DE REPORTE (VISUAL E COM TEXTO) ---
+    
+    // 1. Abre a janela
+    function reportCurrentCard() {
+       if (!requireAuth()) return;
+       // Limpa o campo de texto anterior
+       document.getElementById('reportComment').value = "";
+       // Mostra o modal
+       document.getElementById('reportModal').style.display = 'flex';
+       // Tenta focar no campo de texto para digitar logo
+       setTimeout(() => document.getElementById('reportComment').focus(), 100);
+    }
+
+    // 2. Fecha a janela sem fazer nada
+    function closeReportModal() {
+        document.getElementById('reportModal').style.display = 'none';
+    }
+
+    // 3. Envia o reporte com o texto
+    function submitReport() {
+       const comment = document.getElementById('reportComment').value.trim();
+       const card = cards[currentCard];
+       const realIndex = initialCards.indexOf(card);
+       
+       // Fecha o modal visualmente
+       closeReportModal();
+
+       // Envia para o backend
+       const formData = new URLSearchParams();
+       formData.append('action', 'reportError');
+       formData.append('sheetId', SHEET_ID);
+       formData.append('cardIndex', realIndex + 2); 
+       formData.append('cardFront', card.front ? card.front.substring(0, 30) : "Sem texto");
+       formData.append('email', userEmail);
+       formData.append('comment', comment); // <--- AQUI VAI O COMENTÁRIO DO USUÁRIO
+
+       fetch(SRS_BACKEND_URL, {
+           method: 'POST',
+           mode: 'no-cors',
+           body: formData
+       }).catch(e => console.log("Erro de conexão no report:", e));
+
+       // Feedback visual
+       showFeedback("Reporte enviado! Obrigado. 📝", "#FFD700");
+    }
+	function smartShuffle(deck) {
+      // 1. Agrupa os cards por Tópico
+      let groups = {};
+      deck.forEach(card => {
+        let key = card.topico || "Geral";
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(card);
+      });
+
+      // 2. Embaralha cada tópico internamente (Fisher-Yates robusto)
+      for (let key in groups) {
+        let g = groups[key];
+        for (let i = g.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [g[i], g[j]] = [g[j], g[i]];
+        }
+      }
+
+      // 3. Reconstrói o baralho alternando os tópicos (A, B, C, A, B...)
+      let result = [];
+      let keys = Object.keys(groups);
+      // Embaralha a ordem dos tópicos também para não começar sempre pelo mesmo
+      keys.sort(() => Math.random() - 0.5); 
+      
+      let maxLen = 0;
+      keys.forEach(k => maxLen = Math.max(maxLen, groups[k].length));
+
+      for (let i = 0; i < maxLen; i++) {
+        for (let key of keys) {
+          if (groups[key][i]) {
+            result.push(groups[key][i]);
+          }
+        }
+      }
+      return result;
+    }
+	// --- LÓGICA DE ZOOM (LIGHTBOX) ---
+    
+    // 1. Abre o Zoom
+    function openLightbox(src) {
+        const modal = document.getElementById('lightboxModal');
+        const img = document.getElementById('lightboxImage');
+        img.src = src;
+        modal.style.display = 'flex';
+    }
+
+    // 2. Fecha o Zoom
+    function closeLightbox() {
+        document.getElementById('lightboxModal').style.display = 'none';
+    }
+
+    // 3. VIGILANTE: Detecta cliques em imagens automaticamente
+    // Isso evita ter que modificar cada card manualmente. Se tem imagem, o zoom funciona.
+    document.getElementById('flashcard-content').addEventListener('click', function(e) {
+        if (e.target && e.target.tagName === 'IMG') {
+            // Impede que o clique na imagem vire o card (se for esse o comportamento padrão)
+            e.stopPropagation(); 
+            openLightbox(e.target.src);
+        }
+    });
+	// --- LÓGICA DE OFENSIVA (STREAK) ---
+    function checkAndIncrementStreak() {
+        const STORAGE_KEY_STREAK = 'chicoStreakCount';
+        const STORAGE_KEY_DATE = 'chicoLastStudyDate';
+        
+        const today = new Date().toISOString().split('T')[0]; // Data de hoje (YYYY-MM-DD)
+        const lastDate = localStorage.getItem(STORAGE_KEY_DATE);
+        let currentStreak = parseInt(localStorage.getItem(STORAGE_KEY_STREAK) || 0);
+
+        const streakDisplay = document.getElementById('streakDisplay');
+
+        // Se é o primeiro acesso de todos
+        if (!lastDate) {
+            currentStreak = 1;
+            localStorage.setItem(STORAGE_KEY_DATE, today);
+            localStorage.setItem(STORAGE_KEY_STREAK, currentStreak);
+        } 
+        else if (lastDate !== today) {
+            // Calcula a diferença de dias
+            const d1 = new Date(today);
+            const d2 = new Date(lastDate);
+            const diffTime = Math.abs(d1 - d2);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 1) {
+                // Estudou ontem -> Aumenta a ofensiva!
+                currentStreak++;
+                // Efeito visual de celebração
+                streakDisplay.style.transform = "scale(1.5)";
+                setTimeout(() => streakDisplay.style.transform = "scale(1)", 500);
+            } else {
+                // Quebrou a corrente -> Recomeça
+                currentStreak = 1;
+            }
+            // Salva o progresso de hoje
+            localStorage.setItem(STORAGE_KEY_DATE, today);
+            localStorage.setItem(STORAGE_KEY_STREAK, currentStreak);
+        }
+
+        // Atualiza a tela
+        streakDisplay.innerHTML = `🔥 ${currentStreak}`;
+    }
   </script>
 </body>
 </html>

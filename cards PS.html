@@ -8,17 +8,42 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#000000">
   <link rel="apple-touch-icon" href="https://img.icons8.com/color/96/books.png"> 
-  <link rel="icon" type="image/png" href="https://img.icons8.com/color/96/books.png">
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
+<link rel="icon" type="image/png" href="https://img.icons8.com/color/96/books.png">
+<!-- NOVA FONTE ROBOTO -->
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      background-color: black;
-      color: #FFD700;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      overflow-x: hidden;
-    }
+
+/* --- MICRO-INTERAÇÕES (NOVO) --- */
+button, select, .menu-item-row, .info-icon {
+  transition: all 0.2s ease !important; /* Suavidade em tudo */
+}
+button:active, .menu-item-row:active {
+  transform: scale(0.95) !important; /* Efeito de clique físico */
+}
+/* --- COR DOS ÍCONES (DOURADO) --- */
+/* Pinta de dourado os ícones do menu, do botão hambúrguer e da barra superior */
+.menu-item-row i, 
+.hamburger-btn i,
+.top-bar button i {
+    color: #FFD700;
+    text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); /* Brilho suave */
+}
+
+/* Exceção: Mantém o ícone de SAIR vermelho para segurança */
+.menu-item-row i.fa-sign-out-alt {
+    color: #ff3333 !important;
+    text-shadow: none;
+}
+
+body {
+  background-color: black;
+  color: #FFD700;
+  font-family: 'Roboto', sans-serif; /* Fonte Atualizada */
+  text-align: center;
+  overflow-x: hidden;
+}
       .top-bar {
       display: flex;
       justify-content: center;        /* ← CENTRALIZADO */
@@ -120,26 +145,29 @@
     }
     
     /* Usa a classe .show-tooltip que o JS adiciona */
+    /* Usa a classe .show-tooltip que o JS adiciona - VERSÃO SLIM */
     .top-bar .tooltip.show-tooltip::after {
       content: attr(data-tooltip);
       position: absolute;
       
-      /* Posicionamento ABAIXO do botão */
-      top: 110%; 
+      /* Posicionamento (Mais colado ao botão) */
+      top: 100%; 
       left: 50%;
       transform: translateX(-50%);
+      margin-top: 2px; /* Pequeno respiro */
       
-      /* Visual */
+      /* Visual Compacto */
       background: #222;
       color: #fff;
-      padding: 6px 10px;
-      border-radius: 5px;
+      padding: 3px 8px; /* Reduzi de 6px para 3px (muito mais fino) */
+      border-radius: 4px;
       white-space: nowrap;
-      font-size: 0.85em;
-      border: 1px solid gold; /* Borda para destaque */
-      box-shadow: 0 4px 15px rgba(0,0,0,0.9);
+      font-size: 0.75em; /* Letra levemente menor */
+      line-height: 1;    /* Remove altura extra de linha */
+      border: 1px solid gold; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.9);
       
-      z-index: 10005; /* Z-index altíssimo para tentar furar camadas */
+      z-index: 10005; 
       opacity: 1;
       visibility: visible;
     }
@@ -967,35 +995,37 @@
       border-color: gold;
     }
 
-    /* --- TOOLTIP ROBUSTO (Funciona com Hover e Foco/Clique) --- */
+   /* --- TOOLTIP ROBUSTO (Compacto) --- */
     .info-icon:hover::after,
     .info-icon:focus::after {
-      content: attr(data-tooltip); /* O texto vem daqui */
+      content: attr(data-tooltip);
       
       /* Visual */
       background: #222;
       color: #fff;
       border: 1px solid gold;
       border-radius: 6px;
-      padding: 8px 10px;
-      font-size: 0.85em;
+      padding: 6px 8px;       /* Reduzido de 8px 10px */
+      font-size: 0.8em;       /* Reduzido de 0.85em */
       font-weight: normal;
-      line-height: 1.3;
+      line-height: 1.2;       /* Linhas mais próximas */
       text-align: left;
-      white-space: normal; /* Permite quebrar linha */
+      white-space: normal;    /* Permite quebra de linha */
       box-shadow: 0 4px 10px rgba(0,0,0,0.8);
       
-      /* Tamanho e Posição */
-      width: 200px;
-      position: absolute;
-      bottom: 135%; /* Aparece acima do ícone */
-      right: -10px; /* Alinha com a direita */
-      z-index: 10005; /* Garante que fique na frente de tudo */
+      /* Tamanho e Posição Otimizados */
+      max-width: 160px;       /* Limita a largura máxima (era width: 200px fixo) */
+      width: max-content;     /* A caixa só cresce o necessário para o texto */
+      min-width: 100px;       /* Garante um tamanho mínimo legível */
       
-      /* Animação suave */
+      position: absolute;
+      bottom: 145%;           /* Sobe um pouco mais para não tapar o ícone */
+      right: -5px;            /* Alinhamento levemente ajustado */
+      z-index: 10005;
+      
       opacity: 1;
       visibility: visible;
-      pointer-events: none; /* O mouse ignora o balão */
+      pointer-events: none;
     }
 
     /* Pequena seta apontando para baixo (Estético) */
@@ -1251,57 +1281,59 @@
  <div class="top-bar">
     <!-- 1. BOTÃO MENU (HAMBÚRGUER) -->
     <div style="position: relative;">
-      <button class="hamburger-btn" onclick="toggleHamburgerMenu()">☰</button>
+     <button class="hamburger-btn tooltip" data-tooltip="Menu Principal" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleHamburgerMenu()"><i class="fas fa-bars"></i></button>
       
       <!-- GAVETA DO MENU (CONTEÚDO ESCONDIDO) -->
       <div id="mainMenuDropdown" class="menu-dropdown">
         
-        <!-- Configurações e Ajuda -->
-        <div class="menu-item-row" onclick="toggleHelpModal(); toggleHamburgerMenu()">
-            <span>❓</span> <span class="menu-item-label">Ajuda</span>
-        </div>
-        <div class="menu-item-row" onclick="openSettingsModal(); toggleHamburgerMenu()">
-            <span>⚙️</span> <span class="menu-item-label">Configurações</span>
-        </div>
-        <div class="menu-item-row" onclick="reportCurrentCard(); toggleHamburgerMenu()">
-            <span>⚠️</span> <span class="menu-item-label">Reportar Erro</span>
-        </div>
-
+       <!-- Configurações e Ajuda -->
+<div class="menu-item-row" onclick="toggleHelpModal(); toggleHamburgerMenu()">
+    <i class="fas fa-question-circle" style="width:25px;"></i> <span class="menu-item-label">Ajuda</span>
+</div>
+<div class="menu-item-row" onclick="openSettingsModal(); toggleHamburgerMenu()">
+    <i class="fas fa-cog" style="width:25px;"></i> <span class="menu-item-label">Configurações</span>
+</div>
+<div class="menu-item-row" onclick="reportCurrentCard(); toggleHamburgerMenu()">
+    <i class="fas fa-exclamation-triangle" style="width:25px;"></i> <span class="menu-item-label">Reportar Erro</span>
+</div>
+<div class="menu-item-row" onclick="toggleManualModal(); toggleHamburgerMenu()">
+    <i class="fas fa-book" style="width:25px;"></i> <span class="menu-item-label">Manual do Usuário</span>
+</div>
         <!-- Aparência (Cores e Fontes) -->
-        <div class="menu-item-row">
-            <span>🖌️</span> 
-            <select id="cardColor" onchange="changeCardColor(this.value)" style="background:#000; color:white; border:1px solid #555; width:100%;">
-                <option value="white">Cor do Card...</option>
-                <option value="white">Branco</option>
-                <option value="black">Preto</option>
-                <option value="darkblue">Azul Escuro</option>
-                <option value="darkred">Vermelho Escuro</option>
-                <option value="gold">Dourado</option>
-            </select>
-        </div>
-        <div class="menu-item-row">
-             <span>🔤</span>
-             <select id="textColor" onchange="changeTextColor(this.value)" style="background:#000; color:white; border:1px solid #555; width:100%;">
-                <option value="black">Cor da Fonte...</option>
-                <option value="black">Preto</option>
-                <option value="white">Branco</option>
-                <option value="gold">Dourado</option>
-            </select>
-        </div>
-        <div class="menu-item-row" onclick="adjustFontSize(1)">
-            <span>A+</span> <span class="menu-item-label">Aumentar Fonte</span>
-        </div>
-        <div class="menu-item-row" onclick="adjustFontSize(-1)">
-            <span>A-</span> <span class="menu-item-label">Diminuir Fonte</span>
-        </div>
-        <div class="menu-item-row" onclick="toggleHighlightAsterisks(); toggleHamburgerMenu()">
-            <span>✨</span> <span class="menu-item-label">Destacar Palavras</span>
-        </div>
-        
-        <!-- Funcionalidades -->
-        <div class="menu-item-row" onclick="toggleSpeech(); toggleHamburgerMenu()">
-            <span id="menuTTSIcon">🗣️</span> <span class="menu-item-label">Ler em Voz Alta</span>
-        </div>
+<div class="menu-item-row">
+    <i class="fas fa-paint-brush" style="width:25px;"></i> 
+    <select id="cardColor" onchange="changeCardColor(this.value)" style="background:#000; color:white; border:1px solid #555; width:100%;">
+        <option value="white">Cor do Card</option>
+        <option value="white">Branco</option>
+        <option value="black">Preto</option>
+        <option value="darkblue">Azul Escuro</option>
+        <option value="darkred">Vermelho Escuro</option>
+        <option value="gold">Dourado</option>
+    </select>
+</div>
+<div class="menu-item-row">
+     <i class="fas fa-font" style="width:25px;"></i>
+     <select id="textColor" onchange="changeTextColor(this.value)" style="background:#000; color:white; border:1px solid #555; width:100%;">
+        <option value="black">Cor da Fonte</option>
+        <option value="black">Preto</option>
+        <option value="white">Branco</option>
+        <option value="gold">Dourado</option>
+    </select>
+</div>
+<div class="menu-item-row" onclick="adjustFontSize(1)">
+    <i class="fas fa-plus" style="width:25px;"></i> <span class="menu-item-label">Aumentar Fonte</span>
+</div>
+<div class="menu-item-row" onclick="adjustFontSize(-1)">
+    <i class="fas fa-minus" style="width:25px;"></i> <span class="menu-item-label">Diminuir Fonte</span>
+</div>
+<div class="menu-item-row" onclick="toggleHighlightAsterisks(); toggleHamburgerMenu()">
+    <i class="fas fa-highlighter" style="width:25px;"></i> <span class="menu-item-label">Destacar Palavras</span>
+</div>
+
+<!-- Funcionalidades -->
+<div class="menu-item-row" onclick="toggleSpeech(); toggleHamburgerMenu()">
+    <span id="menuTTSIcon"><i class="fas fa-volume-up" style="width:25px;"></i></span> <span class="menu-item-label">Ler em Voz Alta</span>
+</div>
 
         <!-- Sair -->
         <div class="menu-item-row" onclick="logout()" style="border-top: 1px solid #FFD700; margin-top:5px; padding-top:10px;">
@@ -1312,19 +1344,15 @@
 
     <!-- 2. ITENS VISÍVEIS (ESSENCIAIS) -->
     <!-- Filtro -->
-    <button id="filterBtn" class="tooltip" data-tooltip="Filtrar Conteúdo" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="openFilterModal()">📂</button>
+    <button id="filterBtn" class="tooltip" data-tooltip="Filtrar Cards" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="openFilterModal()"><i class="fas fa-folder-open"></i></button>
     
-    <!-- Ofensiva -->
-    <span id="streakDisplay" class="tooltip" data-tooltip="Ofensiva" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="color: #ff4500; font-weight: bold; cursor:default;">🔥 0</span>
+    <span id="streakDisplay" class="tooltip" data-tooltip="Ofensiva (Dias seguidos)" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="color: #ff4500; font-weight: bold; cursor:default;">🔥 0</span>
     
-    <!-- Timer -->
     <span class="tooltip" data-tooltip="Zerar Tempo" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="resetTimer()" style="cursor:pointer;">⏱️ <span id="timer">00:00</span></span>
     
-    <!-- Estatísticas -->
-    <button class="tooltip" data-tooltip="Estatísticas" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleStatsModal()">📈</button>
+    <button class="tooltip" data-tooltip="Estatísticas" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleStatsModal()"><i class="fas fa-chart-line"></i></button>
     
-    <!-- Botão de Revisão de Erros (Só aparece quando necessário) -->
-    <button id="reviewErrorsButton" class="tooltip" data-tooltip="Revisar Erros" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleReviewErrors()" style="display:none; color:#ff5555;">🔍</button>
+    <button id="reviewErrorsButton" class="tooltip" data-tooltip="Revisar Erros" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleReviewErrors()" style="display:none;"><i class="fas fa-search"></i></button>
   </div>
   <div id="progressBarContainer">
     <div id="progressBarFill"></div>
@@ -1361,7 +1389,9 @@
         <span id="autoAdvanceTimerDisplay" style="font-size: 1.0em; min-width: 50px; color: white;">0s</span>
       </div>
     </div>
+	<input type="number" id="goToCard" placeholder="#" onchange="goToSpecificCard()" style="margin: 0 5px;" />
     <span id="cardCounter">0/0</span>
+	<button id="evalMenuBtn" data-tooltip="Menu de Avaliação" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="openEvalModal()" style="color: gold; border: 1px solid #444; border-radius: 5px; padding: 0 10px; margin-right: 5px;"><i class="fas fa-bars"></i></button>
 	<div id="srsButtons" style="display: none; gap: 8px; justify-content: center; align-items: center;">
         
         <button id="btnAgain" class="accuracy-button" data-tooltip="Revisar em 10 min" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="position: relative; color: #ff5555; border: 1px solid #ff5555; border-radius: 5px; font-size: 1em; padding: 0px 10px; min-width: 70px;" onclick="rateCardSRS('again', this, '#ff5555')">Errei</button>
@@ -1415,6 +1445,51 @@
         <p><span>🏁</span> Tela Final: Exibida quando todos os flashcards são revisados.</p>
       </div>
       <button class="close-button" onclick="toggleHelpModal()">Fechar</button>
+    </div>
+  </div>
+  <div id="manualModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+    <div id="manualModalContent" style="background: #222; color: white; padding: 30px; border-radius: 10px; max-width: 700px; width: 90%; box-shadow: 0 0 30px rgba(255, 215, 0, 0.7); position: relative; max-height: 85vh; overflow-y: auto; text-align: left;">
+      <h2 style="color: gold; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #444; padding-bottom: 10px;">Manual do Usuário</h2>
+      
+      <h3 style="color: #FFD700;">📖 Como Usar</h3>
+      <p style="margin-bottom: 15px;">Bem-vindo ao Chico Concursos! Este sistema utiliza repetição espaçada e inteligência artificial para otimizar seu estudo.</p>
+      <ul style="margin-bottom: 20px; padding-left: 20px; line-height: 1.6;">
+          <li><strong>Modos de Estudo:</strong> Escolha entre Simulado, Estudo Livre, SRS (Repetição Espaçada) ou Provas nas configurações.</li>
+          <li><strong>Inteligência Artificial:</strong> O "Modo Foco" detecta suas dificuldades e repete os temas necessários automaticamente.</li>
+          <li><strong>Gestos (Celular):</strong> Deslize o dedo para a <strong>Direita</strong> (Acertei) ou para a <strong>Esquerda</strong> (Errei/Repetir).</li>
+         <li>
+              <strong>Áudio (TTS):</strong> Ative a leitura em voz alta no menu ou pela tecla 'S'. Você pode escolher a velocidade e a voz nas configurações.
+              <div style="margin-top: 8px; margin-bottom: 8px; background: rgba(0, 120, 215, 0.2); border: 1px solid #0078d7; padding: 10px; border-radius: 5px; font-size: 0.95em; color: #e1f0ff;">
+                  <strong>💡 Dica de Ouro:</strong> Para uma experiência superior, recomendamos usar o navegador <strong>Microsoft Edge</strong>. Ele possui vozes neurais ultra-realistas (quase humanas) que já vêm instaladas nativamente.
+              </div>
+          </li>
+		  <li><strong>Sanguessugas:</strong> Se errar o mesmo card 5 vezes, o sistema alerta para que você revise a teoria.</li>
+          <li><strong>Filtros:</strong> Use o ícone da pasta (📂) para estudar apenas uma disciplina ou tópico específico.</li>
+      </ul>
+
+      <h3 style="color: #FFD700;">⌨️ Teclas de Atalho</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px; color: gold;">Enter</td><td style="padding: 8px;">Virar Card / Avançar</td></tr>
+          <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px; color: gold;">Alt</td><td style="padding: 8px;">Voltar Card Anterior</td></tr>
+          
+          <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px; color: gold;">1</td><td style="padding: 8px;">Acertei (Normal) / Errei (SRS)</td></tr>
+          <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px; color: gold;">2</td><td style="padding: 8px;">Errei (Normal) / Difícil (SRS)</td></tr>
+          <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px; color: gold;">3</td><td style="padding: 8px;">Bom (Apenas Modo SRS)</td></tr>
+          <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px; color: gold;">4</td><td style="padding: 8px;">Fácil (Apenas Modo SRS)</td></tr>
+
+          <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px; color: gold;">R</td><td style="padding: 8px;">Resetar Temporizador</td></tr>
+          <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px; color: gold;">T</td><td style="padding: 8px;">Configurar Tempo (Timer)</td></tr>
+          <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px; color: gold;">P</td><td style="padding: 8px;">Pausar Temporizador</td></tr>
+
+          <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px; color: gold;">S</td><td style="padding: 8px;">Ler em Voz Alta (On/Off)</td></tr>
+          <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px; color: gold;">+ (Mais)</td><td style="padding: 8px;">Aumentar Fonte</td></tr>
+          <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px; color: gold;">- (Menos)</td><td style="padding: 8px;">Diminuir Fonte</td></tr>
+		  <tr style="border-bottom: 1px solid #444;"><td style="padding: 8px; color: gold;">* (Asterisco)</td><td style="padding: 8px;">Destacar Palavras</td></tr>
+      </table>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <button onclick="toggleManualModal()" style="background: gold; color: black; border: none; padding: 10px 25px; border-radius: 5px; font-weight: bold; cursor: pointer;">Entendi</button>
+      </div>
     </div>
   </div>
   <div id="statsModal" style="display:none;">
@@ -1547,7 +1622,11 @@
       <div class="settings-section">
 	  <div class="settings-section">
         <h3>2.5. Configuração de Voz (TTS)</h3>
-        
+        <div style="margin-bottom: 15px; background: rgba(0, 120, 215, 0.25); border-left: 4px solid #0078d7; padding: 10px; border-radius: 4px;">
+            <p style="margin: 0; font-size: 0.95em; line-height: 1.4;">
+                🚀 <strong>Melhor Qualidade:</strong> O navegador <strong>Microsoft Edge</strong> oferece as melhores vozes (Neurais) gratuitamente. Se estiver em outro navegador, as vozes podem soar robóticas.
+            </p>
+        </div>
         <label style="display:block; color:gold; margin-bottom:5px;">Escolher Voz:</label>
         <select id="voiceSelect" style="width:100%; padding:8px; background:#333; color:white; border:1px solid #555; border-radius:4px; margin-bottom:10px;">
             <option value="">Carregando vozes...</option>
@@ -1691,6 +1770,27 @@
       <h3 style="color: #FFD700; margin-bottom: 15px; font-size: 1.5em;">⚠️ Atenção</h3>
       <p id="customAlertMessage" style="color: white; font-size: 1.1em; line-height: 1.5;">Mensagem aqui</p>
       <button class="custom-alert-btn" onclick="closeCustomAlert()">OK</button>
+    </div>
+  </div>
+  <div id="evalModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 21000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+    <div style="background: #222; color: white; padding: 25px; border-radius: 10px; max-width: 350px; width: 90%; border: 1px solid gold; text-align: center; box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);">
+      <h3 style="color: gold; margin-bottom: 20px;">Escolha a Avaliação</h3>
+      
+      <button onclick="setEvalMode('normal')" style="width: 100%; padding: 12px; margin-bottom: 10px; background: #333; color: white; border: 1px solid #555; border-radius: 5px; font-size: 1.1em; cursor: pointer;">
+        ✅ Certo / Errado
+      </button>
+
+      <button onclick="setEvalMode('srs')" style="width: 100%; padding: 12px; margin-bottom: 10px; background: #333; color: white; border: 1px solid #555; border-radius: 5px; font-size: 1.1em; cursor: pointer;">
+        🧠 SRS (Repetição Espaçada)
+      </button>
+
+      <button onclick="setEvalMode('hidden')" style="width: 100%; padding: 12px; margin-bottom: 20px; background: #444; color: #aaa; border: 1px solid #555; border-radius: 5px; font-size: 1.1em; cursor: pointer;">
+        ⛔ Limpar Botões (Ocultar)
+      </button>
+
+      <button onclick="closeEvalModal()" style="background: transparent; border: none; color: gold; font-weight: bold; cursor: pointer; text-decoration: underline;">
+        Fechar
+      </button>
     </div>
   </div>
   <script>
@@ -1956,14 +2056,10 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
     const result = await response.json();
     if (result.success) {
       userEmail = email;
-      userAllowedCourses = result.allowedCourses || []; // Armazena a lista de cursos permitidos vinda do App Script
+     userAllowedCourses = result.allowedCourses || []; // Armazena a lista de cursos permitidos vinda do App Script
 
       // Verifica se o usuário tem permissão para acessar ESTA planilha específica
-      if (SHEET_ID && userAllowedCourses.length > 0 && !userAllowedCourses.includes(SHEET_ID)) {
-        showLoginError('Você não possui acesso a este curso.');
-        setLoginButtonLoading(false);
-        return; // Interrompe o login
-      }
+     // (Verificação local removida para segurança - A validação será feita pelo Servidor ao carregar os cards) 
 
      // Se passou pela verificação, prossegue com o login normal
       localStorage.setItem('isAuthenticated', 'true');
@@ -2013,17 +2109,11 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
       isAuthenticated = true;
       userEmail = savedEmail;
 
-      // Carrega cursos permitidos
+    // Carrega cursos permitidos
       const savedAllowedCourses = localStorage.getItem('userAllowedCourses');
       userAllowedCourses = savedAllowedCourses ? JSON.parse(savedAllowedCourses) : [];
 
-      // Verifica permissão
-      if (SHEET_ID && userAllowedCourses.length > 0 && !userAllowedCourses.includes(SHEET_ID)) {
-        document.getElementById("flashcard-content").textContent = "Você não possui acesso a este curso.";
-        cardCounter.textContent = "0/0";
-        document.getElementById('loginModal').style.display = 'flex';
-        return;
-      }
+      // (Verificação local removida - O Servidor bloqueará o download dos cards se a permissão for inválida)
 
       document.getElementById('loginModal').style.display = 'none';
       document.getElementById("flashcard-content").textContent = "Carregando flashcards...";
@@ -2377,21 +2467,23 @@ document.getElementById("focoSelect").style.display = "none";
       }
       // >>> FIM DO BLOCO <<<
       // --- ATUALIZAÇÃO DOS BOTÕES (SRS vs Normal) ---
-      const normalButtons = [document.getElementById('correctButton'), document.getElementById('incorrectButton')];
-      const srsButtonsDiv = document.getElementById('srsButtons');
+      // --- ATUALIZAÇÃO DOS BOTÕES (Controlado pelo Menu Hambúrguer) ---
+      // Sincroniza o estado inicial se necessário, garantindo que não fique vazio
+      if (typeof currentEvalState === 'undefined') {
+          currentEvalState = (typeof isSRSMode !== 'undefined' && isSRSMode) ? 'srs' : 'normal';
+      }
+      
+      // Chama a função que criamos no Passo 3 para decidir o que mostrar
+      updateEvalButtonsUI();
 
-      if (isSRSMode) {
-          // Modo SRS: Esconde normal, mostra SRS
-          normalButtons.forEach(btn => btn.style.display = 'none');
-          srsButtonsDiv.style.display = 'flex';
-          
-          // Esconde controles que não fazem sentido no SRS
-          document.getElementById('shuffleButton').style.display = 'none';
+      // Ajuste extra para o botão de embaralhar (Opcional: esconde no SRS visualmente)
+      // Nota: A lógica principal de esconder botões já está dentro do updateEvalButtonsUI
+      if (typeof isSRSMode !== 'undefined' && isSRSMode) {
+          const shuffleBtn = document.getElementById('shuffleButton');
+          if (shuffleBtn) shuffleBtn.style.display = 'none';
       } else {
-          // Modo Normal: Mostra normal, esconde SRS
-          normalButtons.forEach(btn => btn.style.display = 'inline-block');
-          srsButtonsDiv.style.display = 'none';
-          document.getElementById('shuffleButton').style.display = 'inline-block';
+          const shuffleBtn = document.getElementById('shuffleButton');
+          if (shuffleBtn) shuffleBtn.style.display = 'inline-block';
       }
     }
 
@@ -2548,7 +2640,73 @@ document.getElementById("focoSelect").style.display = "none";
         saveFlashcardState();
       }
     }
+// --- LÓGICA DO MENU DE AVALIAÇÃO (COM MEMÓRIA) ---
+    // 1. Ao iniciar, tenta recuperar o que estava salvo. Se não tiver nada, usa 'normal'.
+    let currentEvalState = localStorage.getItem('chicoEvalMode') || 'normal';
+	
+    function openEvalModal() {
+        document.getElementById('evalModal').style.display = 'flex';
+    }
 
+    function closeEvalModal() {
+        document.getElementById('evalModal').style.display = 'none';
+    }
+
+    function setEvalMode(mode) {
+        currentEvalState = mode;
+        
+        // --- SALVA A ESCOLHA NO NAVEGADOR ---
+        localStorage.setItem('chicoEvalMode', mode);
+
+        // Atualiza a variável global do sistema
+        if (mode === 'srs') {
+            isSRSMode = true;
+        } else if (mode === 'normal') {
+            isSRSMode = false;
+        }
+        
+        updateEvalButtonsUI(); // Atualiza a tela
+        closeEvalModal();
+        showFeedback("Modo salvo!", "gold");
+    }
+
+    function updateEvalButtonsUI() {
+        const srsDiv = document.getElementById('srsButtons');
+        const btnCorrect = document.getElementById('correctButton');
+        const btnIncorrect = document.getElementById('incorrectButton');
+
+        // Reseta tudo para invisível primeiro
+        if(srsDiv) srsDiv.style.display = 'none';
+        if(btnCorrect) btnCorrect.style.display = 'none';
+        if(btnIncorrect) btnIncorrect.style.display = 'none';
+
+        if (currentEvalState === 'hidden') {
+            return; // Se escolheu limpar, nada aparece.
+        }
+
+        if (currentEvalState === 'srs') {
+            if(srsDiv) srsDiv.style.display = 'flex';
+        } else {
+            // Modo Normal (Certo/Errado)
+            if(btnCorrect) btnCorrect.style.display = 'inline-block';
+            if(btnIncorrect) btnIncorrect.style.display = 'inline-block';
+        }
+    }
+    
+    // Força a atualização visual e lógica assim que a página carregar
+    document.addEventListener("DOMContentLoaded", () => {
+        // Sincroniza a variável interna isSRSMode com a escolha salva para que os ATALHOS funcionem
+        if (typeof isSRSMode !== 'undefined') {
+            if (currentEvalState === 'srs') {
+                isSRSMode = true;
+            } else {
+                isSRSMode = false;
+            }
+        }
+        
+        // Atualiza os botões visualmente
+        setTimeout(updateEvalButtonsUI, 500);
+    });
     function toggleReviewErrors() {
       if (!requireAuth()) return;
       
@@ -2795,6 +2953,10 @@ function changeTextColor(color) {
 
     function toggleHelpModal() {
       helpModal.style.display = helpModal.style.display === "none" ? "flex" : "none";
+    }
+	function toggleManualModal() {
+      const modal = document.getElementById('manualModal');
+      modal.style.display = modal.style.display === "none" ? "flex" : "none";
     }
 
     // Funções para o Temporizador Automático
@@ -3640,6 +3802,21 @@ function changeTextColor(color) {
         rateCardSRS('easy', btn, '#00ff00');
     }
   }
+  // --- ATALHOS DE FONTE ---
+  if (e.key === "+" || e.key === "=") { // Aceita + ou = (tecla comum sem shift)
+    e.preventDefault();
+    adjustFontSize(1);
+  }
+ if (e.key === "-" || e.key === "_") { // Aceita - ou _
+    e.preventDefault();
+    adjustFontSize(-1);
+  }
+  // --- NOVO ATALHO: Tecla Asterisco (*) ---
+  if (e.key === "*") {
+    e.preventDefault();
+    toggleHighlightAsterisks();
+  }
+  // ----------------------------------------
   if (e.key === " ") {
     e.preventDefault();
   }

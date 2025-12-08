@@ -94,6 +94,11 @@ body {
       gap: 12px;
       text-align: left;
       min-width: 220px;
+      
+      /* --- NOVAS REGRAS DE ROLAGEM --- */
+      max-height: 60vh;       /* Ocupa no máximo 60% da altura da tela */
+      overflow-y: auto;       /* Cria barra de rolagem se o conteúdo for maior */
+      overflow-x: hidden;     /* Evita rolagem lateral */
     }
 
     .menu-dropdown.show-menu {
@@ -920,28 +925,42 @@ body {
       font-weight: bold;
       color: gold;
     }
-	/* --- REGRAS EXCLUSIVAS PARA CELULAR --- */
-    /* Estas regras SÓ funcionam se a tela for menor que 768px (Celulares) */
-    /* O computador continuará usando as medidas originais (75vh e 98%) */
-    
+	/* --- REGRAS EXCLUSIVAS PARA CELULAR (OTIMIZADO) --- */
     @media (max-width: 768px) {
       
-      /* 1. Adaptação do tamanho do container SÓ no celular */
+      /* 1. Container do Card: Altura reduzida para evitar rolagem dupla */
       #card-container {
-        height: 55vh; /* Reduz a altura para caber com o teclado/barras do navegador */
-        width: 94%;   /* Margem de segurança para não colar na borda */
+        height: 50vh; 
+        width: 96%;
+        margin-top: 5px;
       }
 
-      /* 2. Correção do Login cortado (Permite rolar a tela) */
+      /* 2. Correção Crítica do Login: Garante que o teclado não cubra o botão */
       #loginModal {
-        align-items: flex-start !important; 
-        overflow-y: auto !important;
-        padding-top: 20px;
+        align-items: flex-start !important; /* Cola no topo */
+        overflow-y: auto !important;        /* Permite rolar se o teclado subir */
+        padding-top: 40px;                  /* Espaço seguro do topo */
       }
       
       .login-container {
-        margin: 10px auto 50px auto;
-        width: 95%;
+        margin: 0 auto 80px auto; /* Margem inferior grande para o teclado */
+        width: 92%;
+        padding: 20px;
+      }
+
+      /* 3. Otimização dos Botões da Barra Inferior (Para não quebrar linha) */
+      .bottom-bar {
+        gap: 5px; /* Menos espaço entre botões */
+      }
+      .bottom-bar button {
+        font-size: 1.1em; /* Botões levemente menores */
+      }
+      
+      /* 4. Botões SRS (Errei/Bom/Fácil) mais compactos no celular */
+      .accuracy-button {
+        padding: 0 5px !important;
+        font-size: 0.9em !important;
+        min-width: 55px !important;
       }
     }
 	/* --- ESTILO DAS CAIXAS DE SELEÇÃO (OPTION CARDS) --- */
@@ -1347,7 +1366,8 @@ body {
     <button id="filterBtn" class="tooltip" data-tooltip="Filtrar Cards" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="openFilterModal()"><i class="fas fa-folder-open"></i></button>
     
     <span id="streakDisplay" class="tooltip" data-tooltip="Ofensiva (Dias seguidos)" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="color: #ff4500; font-weight: bold; cursor:default;">🔥 0</span>
-    
+	<span id="syncIndicator" class="tooltip" data-tooltip="Status: Sincronizado" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="color: #00ff00; font-weight: bold; cursor: help; margin-left: 8px; text-shadow: 0 0 5px #00ff00;">☁️</span>
+ 
     <span class="tooltip" data-tooltip="Zerar Tempo" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="resetTimer()" style="cursor:pointer;">⏱️ <span id="timer">00:00</span></span>
     
     <button class="tooltip" data-tooltip="Estatísticas" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleStatsModal()"><i class="fas fa-chart-line"></i></button>
@@ -1793,6 +1813,37 @@ body {
       </button>
     </div>
   </div>
+  <div id="handsFreeModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 22000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+  <div style="background: #222; color: white; padding: 25px; border-radius: 10px; max-width: 400px; width: 90%; border: 1px solid #FFD700; box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); text-align: center;">
+    
+    <div id="hfStep1">
+      <h3 style="color: #FFD700; margin-bottom: 15px;">Modo de Leitura 🗣️</h3>
+      <p style="margin-bottom: 20px; font-size: 1.1em;">Deseja ativar o avanço automático (Mãos Livres)?</p>
+      
+      <button onclick="showHfStep2()" style="background: linear-gradient(to bottom, #FFD700, #D4AF37); color: black; border: none; padding: 12px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 10px;">
+        SIM (Automático)
+      </button>
+      
+      <button onclick="startManualTTS()" style="background: #333; color: white; border: 1px solid #555; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%;">
+        NÃO (Apenas Ler)
+      </button>
+      <div style="margin-top:15px; cursor:pointer; color:#888; text-decoration:underline;" onclick="closeHandsFreeModal()">Cancelar</div>
+    </div>
+
+    <div id="hfStep2" style="display:none;">
+      <h3 style="color: #FFD700; margin-bottom: 15px;">⏱️ Tempo de Espera</h3>
+      <p style="margin-bottom: 10px;">Quantos segundos esperar após a resposta?</p>
+      
+      <input type="number" id="hfDelayInput" value="3" min="1" max="60" style="width: 80px; padding: 10px; font-size: 1.5em; text-align: center; border-radius: 5px; border: 1px solid gold; background: #000; color: white; margin-bottom: 20px;">
+      
+      <button onclick="startHandsFreeTTS()" style="background: linear-gradient(to bottom, #FFD700, #D4AF37); color: black; border: none; padding: 12px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; width: 100%;">
+        INICIAR
+      </button>
+      <div style="margin-top:15px; cursor:pointer; color:#888; text-decoration:underline;" onclick="resetHfModal()">Voltar</div>
+    </div>
+
+  </div>
+</div>
   <script>
     // --- CONFIGURAÇÃO INICIAL ---
 // --- CONFIGURAÇÃO INICIAL ---
@@ -2413,6 +2464,7 @@ document.getElementById("focoSelect").style.display = "none";
     }
 
     function updateCard() {
+	if (typeof handsFreeTimer !== 'undefined') clearTimeout(handsFreeTimer);
 	stopSpeech(); // <--- ADICIONE ESTA LINHA
       if (!requireAuth() || cards.length === 0 || isFinished) return;
       const card = cards[currentCard];
@@ -3637,48 +3689,250 @@ function changeTextColor(color) {
     const settingsBtn = document.getElementById('settingsBtn');
     if(settingsBtn) settingsBtn.addEventListener('click', populateVoiceList);
 
+    // --- VARIÁVEIS E FUNÇÕES DO MODO MÃOS LIVRES (ATUALIZADO PARA GOOGLE SITES) ---
+    let isHandsFree = false; 
+    let handsFreeDelay = 3;
+    let handsFreeTimer = null; 
+
+    // 1. Função chamada ao clicar no botão de Voz
     function toggleSpeech() {
-        isAutoTTS = !isAutoTTS;
-        const btn = document.getElementById('ttsButton');
-        
+        // Se já estiver ligado, desliga imediatamente
         if (isAutoTTS) {
-            if(btn) {
-                btn.style.color = "#00ff00";
-                btn.style.textShadow = "0 0 10px #00ff00";
-            }
-            // Tenta iniciar o áudio (destrava contexto no mobile)
-            if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
+            isAutoTTS = false;
+            isHandsFree = false;
+            clearTimeout(handsFreeTimer);
             
-            showFeedback("Leitura Automática: LIGADA 🗣️", "#00ff00");
-            speakCard(); 
-        } else {
-            if(btn) {
-                btn.style.color = "white";
-                btn.style.textShadow = "none";
-            }
-            showFeedback("Leitura Automática: DESLIGADA 🔇", "white");
+            const btn = document.getElementById('ttsButton'); // Ícone, se houver
+            const menuIcon = document.getElementById('menuTTSIcon');
+            if(menuIcon) menuIcon.style.color = "#FFD700"; // Volta ao Dourado
+            
+            showFeedback("Leitura: DESLIGADA 🔇", "white");
             stopSpeech();
+            return;
         }
+
+        // Se estiver desligado, abre a Janela Personalizada (Modal)
+        document.getElementById('handsFreeModal').style.display = 'flex';
+        // Reseta o visual do modal para a etapa 1
+        resetHfModal();
+    }
+
+    // 2. Funções auxiliares do Modal
+    function closeHandsFreeModal() {
+        document.getElementById('handsFreeModal').style.display = 'none';
+    }
+
+    function resetHfModal() {
+        document.getElementById('hfStep1').style.display = 'block';
+        document.getElementById('hfStep2').style.display = 'none';
+    }
+
+    function showHfStep2() {
+        document.getElementById('hfStep1').style.display = 'none';
+        document.getElementById('hfStep2').style.display = 'block';
+        // Foca no campo de número para facilitar digitação
+        setTimeout(() => document.getElementById('hfDelayInput').focus(), 100);
+    }
+
+    // 3. Opção: Apenas Ler (Manual)
+    function startManualTTS() {
+        closeHandsFreeModal();
+        activateTTS(false, 0);
+        showFeedback("Leitura: LIGADA (Manual) 🗣️", "#00ff00");
+    }
+
+    // 4. Opção: Mãos Livres (Automático)
+    function startHandsFreeTTS() {
+        const inputVal = document.getElementById('hfDelayInput').value;
+        const delay = parseInt(inputVal) || 3;
+        
+        closeHandsFreeModal();
+        activateTTS(true, delay);
+        showFeedback(`Mãos Livres ATIVO (${delay}s) 🗣️`, "#00ff00");
+    }
+
+    // 5. Função interna que liga tudo
+    function activateTTS(handsFreeMode, delayTime) {
+        isAutoTTS = true;
+        isHandsFree = handsFreeMode;
+        handsFreeDelay = delayTime;
+        
+        const menuIcon = document.getElementById('menuTTSIcon');
+        if(menuIcon) menuIcon.style.color = "#00ff00"; // Verde
+
+        if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
+        speakCard();
     }
 
     function stopSpeech() {
         window.speechSynthesis.cancel();
     }
+// --- DICIONÁRIO DE PRONÚNCIA (Mapa Fonético) ---
+    // Adicione aqui as palavras que o robô lê errado.
+    // Formato: "Palavra Escrita" : "Jeito que deve ser falado",
+  // --- DICIONÁRIO DE PRONÚNCIA
+    const pronunciationDict = {
+        // === 1. SÍMBOLOS E PONTUAÇÃO ESPECIAL ===
+        "§": "parágrafo",
+        "n.º": "número",
+        "nº": "número",
+        "obs:": "observação",
+        "etc.": "etcetera",
+        "p. ex.": "por exemplo",
+        "v.g.": "verbi gratia",
+        "al.": "Alínea",
 
+        // === 2. CÓDIGOS, LEIS E ESTATUTOS ===
+        "CF/88": "Constituição Federal de oitenta e oito",
+        "CF88": "Constituição Federal",
+        "CC/02": "Código Civil de dois mil e dois",
+        "CC": "Código Civil",
+        "CPC": "Código de Processo Civil",
+        "CPP": "Código de Processo Penal",
+        "CP": "Código Penal",
+        "CTB": "Código de Trânsito Brasileiro",
+        "CLT": "Consolidação das Leis do Trabalho",
+        "ECA": "Estatuto da Criança e do Adolescente",
+        "CDC": "Código de Defesa do Consumidor",
+        "LINDB": "Lei de Introdução às normas do Direito Brasileiro",
+        "LEP": "Lei de Execução Penal",
+        "Leman": "Lei do Mandado de Segurança",
+
+        // === 3. TRIBUNAIS E ÓRGÃOS ===
+        "TJMG": "Tribunal de Justiça de Minas Gerais",
+        "STF": "Supremo Tribunal Federal",
+        "STJ": "Superior Tribunal de Justiça",
+        "TST": "Tribunal Superior do Trabalho",
+        "TSE": "Tribunal Superior Eleitoral",
+        "MP": "Ministério Público",
+        "MPMG": "Ministério Público de Minas Gerais",
+        "DPU": "Defensoria Pública da União",
+        "AGU": "Advocacia Geral da União",
+        "PM": "Polícia Militar",
+        "PC": "Polícia Civil",
+        "PF": "Polícia Federal",
+        "PRF": "Polícia Rodoviária Federal",
+        "11 RPM": "Décima primeira região da polícia militar",
+        "RPM": "Região da Polícia Militar",
+
+        // === 4. RECURSOS E AÇÕES ===
+        "Habeas Corpus": "Ábeas Corpus",
+        "Habeas Data": "Ábeas Data",
+        "Mandado de Segurança": "Mandado de Segurança",
+        "ADIn": "Ação Direta de Inconstitucionalidade",
+        "ADC": "Ação Declaratória de Constitucionalidade",
+        "ADPF": "Arguição de Descumprimento de Preceito Fundamental",
+        "RE": "Recurso Extraordinário",
+        "REsp": "Recurso Especial",
+        "Writ": "Ruit", // Pronúncia afrancesada comum no direito ou "rit" do inglês
+        
+        // === 5. TERMOS EM LATIM (Pronúncia aportuguesada) ===
+        "caput": "cáput",
+        "in fine": "in fíne",
+        "vacatio legis": "vacátio légis",
+        "ex tunc": "ex túnc", // Retroage
+        "ex nunc": "ex núnc", // Não retroage
+        "erga omnes": "érga ômnes",
+        "inter partes": "ínter pártes",
+        "bis in idem": "bis in ídem",
+        "periculum in mora": "perículum in móra",
+        "fumus boni iuris": "fúmus bôni iúris",
+        "custos legis": "cústos légis",
+        "data venia": "dáta vênia",
+
+        // === 6. ABREVIAÇÕES DE TEXTO DE LEI ===
+        "Art.": "Artigo",
+        "art.": "Artigo",
+        "Arts.": "Artigos",
+        "arts.": "Artigos",
+        "Inc.": "Inciso",
+        "inc.": "Inciso",
+        "Par.": "Parágrafo",
+        "par.": "Parágrafo",
+        "pg.": "Parágrafo",
+
+        // === 7. NÚMEROS ROMANOS (Expandido) ===
+        // A lógica agressiva garante que XVIII seja lido antes de V
+        "XVIII": "dezoito",
+        "XVII": "dezessete",
+        "XVI": "dezesseis",
+        "VIII": "oito",
+        "XIII": "treze",
+        "XXX": "trinta",
+        "XIV": "quatorze",
+        "XIX": "dezenove",
+        "XX": "vinte",
+        "XV": "quinze",
+        "XII": "doze",
+        "VII": "sete",
+        "III": "três",
+        "IV": "quatro",
+        "VI": "seis",
+        "IX": "nove",
+        "XI": "onze",
+        "XL": "quarenta",
+        "XC": "noventa",
+        "II": "dois",
+        "V": "cinco",
+        "X": "dez",
+        "L": "cinquenta",
+        "C": "cem",
+        "I": "um" // Cuidado: No contexto de Flashcards, I maiúsculo isolado geralmente é numeral.
+    };
+
+    function applyPhoneticCorrections(text) {
+        if (!text) return "";
+        let correctedText = text;
+        
+        // 1. Ordena as chaves pelo tamanho (do maior para o menor)
+        // Isso garante que "CF/88" seja processado antes de "CF", evitando erros.
+        const sortedKeys = Object.keys(pronunciationDict).sort((a, b) => b.length - a.length);
+
+        for (let original of sortedKeys) {
+            const phonetic = pronunciationDict[original];
+            
+            // Escapa caracteres especiais para o Regex não quebrar (como pontos e barras)
+            const safeOriginal = original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            let regex;
+
+            // --- LÓGICA DA AGRESSIVIDADE ---
+            // Verifica se o termo original é composto APENAS por letras/números (Ex: MP, STF, Writ)
+            if (/^[a-zA-Z0-9À-ÿ]+$/.test(original)) {
+                // Se for palavra limpa, usamos SEGURANÇA (\b) para não substituir o meio de outras palavras
+                // Ex: Evita que "MP" substitua "caMPo"
+                regex = new RegExp(`\\b${safeOriginal}\\b`, "gi");
+            } else {
+                // Se tiver ponto, barra ou espaço (Ex: art., CF/88, 11 RPM), ativamos o MODO AGRESSIVO.
+                // Removemos a fronteira (\b) porque o ponto muitas vezes já é a fronteira.
+                regex = new RegExp(safeOriginal, "gi");
+            }
+
+            correctedText = correctedText.replace(regex, phonetic);
+        }
+        return correctedText;
+    }
     function speakCard() {
         if (!initialCards || initialCards.length === 0) return;
         if (!isAutoTTS) return; 
 
+        // Segurança: Limpa timer anterior para não pular cards errados
+        clearTimeout(handsFreeTimer);
         stopSpeech();
 
         // 1. Prepara o Texto
-        let textToRead = showingFront ? cards[currentCard].front : cards[currentCard].back;
-        textToRead = textToRead.replace(/{{|}}/g, "")
+        let rawText = showingFront ? cards[currentCard].front : cards[currentCard].back;
+        
+        // Limpeza visual (remove HTML, chaves, asteriscos)
+        let cleanText = rawText.replace(/{{|}}/g, "")
                              .replace(/\*/g, "")
                              .replace(/<[^>]*>/g, "")
                              .replace(/&nbsp;/g, " ");
+        
+        // APLICA A CORREÇÃO FONÉTICA (Dicionário)
+        let textToRead = applyPhoneticCorrections(cleanText);
 
-        // 2. Configura a Fala Nativa (Mas com a voz certa selecionada)
+        // 2. Configura a Fala Nativa
         const utterance = new SpeechSynthesisUtterance(textToRead);
         
         // Pega a voz escolhida pelo usuário
@@ -3690,7 +3944,7 @@ function changeTextColor(color) {
         if (chosenVoice) {
             utterance.voice = chosenVoice;
         } else {
-            // Fallback inteligente: Tenta achar Google ou Microsoft se o usuário não escolheu
+            // Fallback inteligente
             const bestVoice = voices.find(v => (v.lang.includes('pt') && (v.name.includes('Google') || v.name.includes('Microsoft'))));
             if (bestVoice) utterance.voice = bestVoice;
         }
@@ -3700,10 +3954,23 @@ function changeTextColor(color) {
         utterance.rate = rateRange ? parseFloat(rateRange.value) : 1.1;
         utterance.pitch = 1.0;
 
-        // Correção de Bug do Chrome (Para de falar em textos longos)
-        // O evento onboundary mantém a API acordada
+        // Correção de Bug do Chrome (Keep Alive)
         utterance.onboundary = function(event) { /* keep alive */ };
         
+        // --- NOVA LÓGICA: O QUE FAZER QUANDO TERMINAR DE FALAR ---
+        utterance.onend = function(event) {
+            if (isHandsFree && isAutoTTS) {
+                // Aguarda o tempo definido pelo usuário e avança
+                handsFreeTimer = setTimeout(() => {
+                    // Verifica novamente se ainda estamos no modo auto (usuário pode ter cancelado nesse meio tempo)
+                    if (isHandsFree && isAutoTTS) {
+                        reviewAndAdvance();
+                    }
+                }, handsFreeDelay * 1000); // Converte segundos para milissegundos
+            }
+        };
+        // ---------------------------------------------------------
+
         utterance.onerror = function(e) {
             console.error("Erro na fala:", e);
             // Se der erro, tenta reiniciar a lista de vozes
@@ -4725,55 +4992,142 @@ function startCustomStudy() {
           nextCard();
       }, 200);
     }
-   // 4. Salvar no Backend (Atualizada com ID Dinâmico e no-cors)
+  // --- NOVO SISTEMA DE FILA DE SALVAMENTO (OFFLINE SYNC) ---
+    // 1. Carrega fila pendente da memória do navegador
+    let saveQueue = JSON.parse(localStorage.getItem('chicoSaveQueue') || '[]');
+    let isSyncing = false;
+
+    // 2. Função genérica que adiciona à fila e tenta enviar
+    function addToSaveQueue(endpoint, dataObj) {
+      // Adiciona timestamp para controle
+      dataObj._timestamp = Date.now();
+      
+      // Salva na fila e persiste no navegador
+      saveQueue.push({ endpoint: endpoint, data: dataObj });
+      localStorage.setItem('chicoSaveQueue', JSON.stringify(saveQueue));
+
+      // Feedback visual discreto no console
+      console.log("Dado adicionado à fila de sincronização. Pendentes:", saveQueue.length);
+      
+      // Tenta processar a fila imediatamente
+      processSaveQueue();
+    }
+
+    // 3. Processador da Fila (O coração do Offline Sync)
+    async function processSaveQueue() {
+      // Se já está enviando, se a fila está vazia ou se está sem internet, para.
+      if (isSyncing || saveQueue.length === 0 || !navigator.onLine) return;
+
+      isSyncing = true;
+      const item = saveQueue[0]; // Pega o item mais antigo (FIFO)
+
+      try {
+        // Converte o objeto de dados para o formato que o Google Scripts aceita
+        const formData = new URLSearchParams();
+        for (const key in item.data) {
+          formData.append(key, item.data[key]);
+        }
+
+        // Tenta enviar
+        await fetch(item.endpoint, {
+          method: 'POST',
+          mode: 'no-cors',
+          keepalive: true,
+          body: formData
+        });
+
+        // Se o fetch funcionou (não deu erro de rede), assumimos sucesso
+        console.log("Item sincronizado com sucesso!");
+        
+        // Remove o item da fila e atualiza o LocalStorage
+        saveQueue.shift();
+        localStorage.setItem('chicoSaveQueue', JSON.stringify(saveQueue));
+
+        isSyncing = false;
+
+        // Se ainda tiver itens, processa o próximo em 500ms
+        if (saveQueue.length > 0) setTimeout(processSaveQueue, 500);
+
+      } catch (err) {
+        console.error("Sem conexão. O dado permanecerá na fila e será tentado depois.", err);
+        isSyncing = false;
+        // Não removemos da fila. Ele tentará de novo na próxima chamada.
+      }
+    }
+
+    // Tenta sincronizar a cada 10 segundos automaticamente
+// --- ATUALIZAÇÃO VISUAL DA NUVEM ---
+    function updateSyncUI() {
+      const icon = document.getElementById('syncIndicator');
+      if (!icon) return;
+
+      if (saveQueue.length > 0) {
+        // Modo PENDENTE (Laranja)
+        icon.style.color = '#ffa500'; 
+        icon.style.textShadow = "0 0 5px #ffa500";
+        icon.setAttribute('data-tooltip', `Salvando... (${saveQueue.length} pendentes)`);
+      } else {
+        // Modo SALVO (Verde)
+        icon.style.color = '#00ff00';
+        icon.style.textShadow = "0 0 5px #00ff00";
+        icon.setAttribute('data-tooltip', 'Tudo salvo na nuvem com segurança');
+      }
+    }
+
+    // Loop Inteligente: Processa a fila E atualiza o ícone a cada 2 segundos
+    setInterval(() => {
+        processSaveQueue(); // Tenta enviar se tiver internet
+        updateSyncUI();     // Atualiza a cor da nuvem
+    }, 2000);
+
+    // Quando a internet voltar, força a sincronização e avisa o usuário
+    window.addEventListener('online', () => {
+        if(saveQueue.length > 0) {
+            showFeedback("Internet voltou! Sincronizando dados... ☁️", "gold");
+            processSaveQueue();
+        }
+    });
+
+    // 4. Salvar no Backend (Atualizado para usar a Fila)
     function saveSRSToBackend(cardId, nextReview, interval, ease) {
       if (!userEmail) return;
 
-      const formData = new URLSearchParams();
-      formData.append('action', 'saveProgress');
-      formData.append('sheetId', SHEET_ID); // <--- AQUI ESTÁ A MÁGICA
-      formData.append('email', userEmail);
-      formData.append('cardId', cardId);
-      formData.append('nextReview', nextReview);
-      formData.append('interval', interval);
-      formData.append('easeFactor', ease);
+      // Cria um objeto simples com os dados
+      const payload = {
+        action: 'saveProgress',
+        sheetId: SHEET_ID,
+        email: userEmail,
+        cardId: cardId,
+        nextReview: nextReview,
+        interval: interval,
+        easeFactor: ease
+      };
 
-      fetch(SRS_BACKEND_URL, {
-        method: 'POST',
-        mode: 'no-cors', 
-        body: formData
-      }).catch(err => console.error("Erro ao salvar:", err));
+      // Manda para a fila (seguro) em vez de fetch direto
+      addToSaveQueue(SRS_BACKEND_URL, payload);
     }
-	// 5. Salvar Posição (Armazém)
+
+    // 5. Salvar Posição (Atualizado para usar a Fila)
     function savePositionToBackend() {
       if (!userEmail || cards.length === 0) return;
 
-      // ATENÇÃO: Precisamos descobrir o índice REAL na planilha (initialCards),
-      // e não apenas o índice do filtro atual (cards).
       const currentCardObj = cards[currentCard];
       const realIndex = initialCards.indexOf(currentCardObj);
 
-      if (realIndex === -1) return; // Segurança
+      if (realIndex === -1) return;
 
-      const formData = new URLSearchParams();
-      formData.append('action', 'savePosition');
-      formData.append('sheetId', SHEET_ID); // ID dinâmico
-      formData.append('email', userEmail);
-      formData.append('cardIndex', realIndex);
-      
-      // Salva qual modo você estava usando para tentar restaurar depois (opcional)
       const currentMode = document.querySelector('input[name="studyMode"]:checked')?.value || "sequencial";
-      formData.append('modo', currentMode);
 
-      console.log(`Salvando posição: Card Global #${realIndex} (${currentMode})`);
+      const payload = {
+        action: 'savePosition',
+        sheetId: SHEET_ID,
+        email: userEmail,
+        cardIndex: realIndex,
+        modo: currentMode
+      };
 
-      // 'keepalive: true' é vital para salvar quando o usuário está fechando a aba
-      fetch(SRS_BACKEND_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        keepalive: true, 
-        body: formData
-      }).catch(err => console.error("Erro ao salvar posição:", err));
+      console.log(`Salvando posição na fila: Card #${realIndex}`);
+      addToSaveQueue(SRS_BACKEND_URL, payload);
     }
 	// 6. Verificar e Perguntar se quer continuar (Resume)
     function checkForSavedPosition() {
@@ -4975,6 +5329,7 @@ function startCustomStudy() {
             menu.classList.remove('show-menu');
         }
     });
+	
   </script>
 </body>
 </html>

@@ -1414,6 +1414,8 @@ body {
 	<button id="evalMenuBtn" data-tooltip="Menu de Avaliação" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="openEvalModal()" style="color: gold; border: 1px solid #444; border-radius: 5px; padding: 0 10px; margin-right: 5px;"><i class="fas fa-bars"></i></button>
 	<div id="srsButtons" style="display: none; gap: 8px; justify-content: center; align-items: center;">
         
+        <button id="btnDontKnow" class="accuracy-button" data-tooltip="Revisar em 10 min" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="position: relative; color: #d8bfd8; border: 1px solid #d8bfd8; border-radius: 5px; font-size: 1em; padding: 0px 10px; min-width: 70px;" onclick="rateCardSRS('again', this, '#d8bfd8')">Não Sei</button>
+
         <button id="btnAgain" class="accuracy-button" data-tooltip="Revisar em 10 min" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="position: relative; color: #ff5555; border: 1px solid #ff5555; border-radius: 5px; font-size: 1em; padding: 0px 10px; min-width: 70px;" onclick="rateCardSRS('again', this, '#ff5555')">Errei</button>
 
         <button id="btnHard" class="accuracy-button" data-tooltip="Revisar em 2 dias" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="position: relative; color: #ffa500; border: 1px solid #ffa500; border-radius: 5px; font-size: 1em; padding: 0px 10px; min-width: 70px;" onclick="rateCardSRS('hard', this, '#ffa500')">Difícil</button>
@@ -1647,8 +1649,13 @@ body {
                 🚀 <strong>Melhor Qualidade:</strong> O navegador <strong>Microsoft Edge</strong> oferece as melhores vozes (Neurais) gratuitamente. Se estiver em outro navegador, as vozes podem soar robóticas.
             </p>
         </div>
-        <label style="display:block; color:gold; margin-bottom:5px;">Escolher Voz:</label>
-        <select id="voiceSelect" style="width:100%; padding:8px; background:#333; color:white; border:1px solid #555; border-radius:4px; margin-bottom:10px;">
+        <label style="display:block; color:gold; margin-bottom:5px;">🗣️ Voz da Pergunta (Frente):</label>
+        <select id="voiceSelectQuestion" style="width:100%; padding:8px; background:#333; color:white; border:1px solid #555; border-radius:4px; margin-bottom:10px;">
+            <option value="">Carregando vozes...</option>
+        </select>
+
+        <label style="display:block; color:gold; margin-bottom:5px;">🗣️ Voz da Resposta (Verso):</label>
+        <select id="voiceSelectAnswer" style="width:100%; padding:8px; background:#333; color:white; border:1px solid #555; border-radius:4px; margin-bottom:10px;">
             <option value="">Carregando vozes...</option>
         </select>
 
@@ -3633,51 +3640,79 @@ function changeTextColor(color) {
     // --- SISTEMA HÍBRIDO (Tenta selecionar a melhor voz nativa Neural) ---
     
     // --- FUNÇÃO MELHORADA: MENUS DE VOZ COM MEMÓRIA ---
+    // --- FUNÇÃO MELHORADA: MENUS DE VOZ DUPLA COM MEMÓRIA ---
     function populateVoiceList() {
-        const voiceSelect = document.getElementById('voiceSelect');
-        if(!voiceSelect) return;
+        const voiceSelectQ = document.getElementById('voiceSelectQuestion');
+        const voiceSelectA = document.getElementById('voiceSelectAnswer');
+        
+        // Se os elementos não existirem (ainda não carregou o modal), sai.
+        if(!voiceSelectQ || !voiceSelectA) return;
         
         const voices = window.speechSynthesis.getVoices();
-        voiceSelect.innerHTML = '';
         
-        // Filtra vozes em Português
+        // Limpa as listas
+        voiceSelectQ.innerHTML = '';
+        voiceSelectA.innerHTML = '';
+        
+        // Filtra vozes em Português e ordena (Google/Microsoft primeiro)
         const ptVoices = voices.filter(v => v.lang.includes('pt') || v.lang.includes('PT'));
-        
-        // Ordena: Google > Microsoft > Outras
         ptVoices.sort((a, b) => {
             const isGoodA = a.name.includes('Google') || a.name.includes('Microsoft') || a.name.includes('Luciana');
             const isGoodB = b.name.includes('Google') || b.name.includes('Microsoft') || b.name.includes('Luciana');
             return isGoodB - isGoodA; 
         });
 
-        if(ptVoices.length === 0) {
-            const option = document.createElement('option');
-            option.textContent = "Padrão do Sistema";
-            voiceSelect.appendChild(option);
-        } else {
-            ptVoices.forEach((voice) => {
+        // Função auxiliar para criar as opções
+        const createOptions = (selectElement) => {
+            if(ptVoices.length === 0) {
                 const option = document.createElement('option');
-                option.textContent = voice.name + (voice.default ? ' (Padrão)' : '');
-                option.value = voice.name;
-                voiceSelect.appendChild(option);
-            });
+                option.textContent = "Padrão do Sistema";
+                selectElement.appendChild(option);
+            } else {
+                ptVoices.forEach((voice) => {
+                    const option = document.createElement('option');
+                    option.textContent = voice.name + (voice.default ? ' (Padrão)' : '');
+                    option.value = voice.name;
+                    selectElement.appendChild(option);
+                });
+            }
+        };
+
+        // Preenche os dois menus
+        createOptions(voiceSelectQ);
+        createOptions(voiceSelectA);
+
+        // --- RECUPERA AS ESCOLHAS SALVAS ---
+        const savedVoiceQ = localStorage.getItem('chicoVoiceQ');
+        const savedVoiceA = localStorage.getItem('chicoVoiceA');
+        const oldSavedVoice = localStorage.getItem('chicoPreferredVoice'); // Migração do sistema antigo
+
+        // Define Pergunta
+        if (savedVoiceQ) {
+            voiceSelectQ.value = savedVoiceQ;
+        } else if (oldSavedVoice) {
+            voiceSelectQ.value = oldSavedVoice; // Tenta usar a antiga se não tiver nova
+        } else {
+            voiceSelectQ.selectedIndex = 0;
         }
 
-        // --- CORREÇÃO: RECUPERA A ÚLTIMA VOZ SALVA ---
-        const savedVoice = localStorage.getItem('chicoPreferredVoice');
-        if (savedVoice) {
-            // Tenta selecionar a voz salva
-            voiceSelect.value = savedVoice;
-            // Se a voz salva não existir mais (mudou de PC/celular), seleciona a primeira
-            if (voiceSelect.selectedIndex === -1) voiceSelect.selectedIndex = 0;
+        // Define Resposta
+        if (savedVoiceA) {
+            voiceSelectA.value = savedVoiceA;
+        } else if (oldSavedVoice) {
+            voiceSelectA.value = oldSavedVoice;
         } else {
-            voiceSelect.selectedIndex = 0;
+            voiceSelectA.selectedIndex = 0;
         }
         
-        // Adiciona evento para salvar IMEDIATAMENTE ao trocar
-        voiceSelect.onchange = function() {
-            localStorage.setItem('chicoPreferredVoice', this.value);
-            showFeedback("Voz salva e definida! 🗣️", "gold");
+        // --- EVENTOS DE SALVAMENTO ---
+        voiceSelectQ.onchange = function() {
+            localStorage.setItem('chicoVoiceQ', this.value);
+            showFeedback("Voz da Pergunta definida! 🗣️", "gold");
+        };
+        voiceSelectA.onchange = function() {
+            localStorage.setItem('chicoVoiceA', this.value);
+            showFeedback("Voz da Resposta definida! 🗣️", "gold");
         };
     }
 
@@ -3936,15 +3971,26 @@ function changeTextColor(color) {
         const utterance = new SpeechSynthesisUtterance(textToRead);
         
         // Pega a voz escolhida pelo usuário
-        const voiceSelect = document.getElementById('voiceSelect');
-        const selectedName = voiceSelect ? voiceSelect.value : "";
+        // --- LÓGICA DE VOZ DUPLA (PERGUNTA vs RESPOSTA) ---
         const voices = window.speechSynthesis.getVoices();
+        let selectedName = "";
+
+        // Se estiver mostrando a FRENTE, usa a voz da Pergunta. Senão, Resposta.
+        if (showingFront) {
+            const vQ = document.getElementById('voiceSelectQuestion');
+            selectedName = vQ ? vQ.value : "";
+        } else {
+            const vA = document.getElementById('voiceSelectAnswer');
+            selectedName = vA ? vA.value : "";
+        }
+
+        // Tenta encontrar a voz escolhida
         const chosenVoice = voices.find(v => v.name === selectedName);
 
         if (chosenVoice) {
             utterance.voice = chosenVoice;
         } else {
-            // Fallback inteligente
+            // Fallback inteligente (Se a voz sumiu, tenta a melhor disponível)
             const bestVoice = voices.find(v => (v.lang.includes('pt') && (v.name.includes('Google') || v.name.includes('Microsoft'))));
             if (bestVoice) utterance.voice = bestVoice;
         }
@@ -4067,6 +4113,18 @@ function changeTextColor(color) {
         // Modo SRS: Tecla 4 = Fácil (Easy)
         const btn = document.getElementById('btnEasy');
         rateCardSRS('easy', btn, '#00ff00');
+    }
+  }
+  // --- NOVO: ATALHO TECLA 0 (NÃO SEI) ---
+  if (e.key === "0") {
+    e.preventDefault();
+    if (typeof isSRSMode !== 'undefined' && isSRSMode) {
+        // Aciona o botão Roxo "Não Sei"
+        const btn = document.getElementById('btnDontKnow');
+        rateCardSRS('again', btn, '#d8bfd8'); 
+    } else {
+        // Se não estiver no SRS, age como "Errei" padrão
+        markAsIncorrect();
     }
   }
   // --- ATALHOS DE FONTE ---
@@ -4949,13 +5007,30 @@ function startCustomStudy() {
       };
 
       if (rating === 'again') { 
-        // Mantém a proteção contra sanguessugas
+        // 1. Proteção contra Sanguessugas
         const realIndex = initialCards.indexOf(cards[currentCard]);
         if (realIndex !== -1) checkLeech(realIndex);
         
+        // 2. Define o agendamento no banco de dados (Segurança para o futuro)
         newInterval = 0; 
         newEase = Math.max(1.3, newEase - 0.2);
         nextReviewDate.setMinutes(nextReviewDate.getMinutes() + 10); 
+
+        // 3. ESTRATÉGIA DE RETORNO (FILA DINÂMICA)
+        // Se o usuário não sabe, ele DEVE ver de novo antes de sair,
+        // não importa se faltam 2 minutos ou 10.
+        
+        // Pega o card atual
+        const cardToRepeat = cards[currentCard];
+        
+        // Verifica se ele já não é o último (para não duplicar desnecessariamente se só sobrar 1)
+        if (cards.length > 1) {
+            // Joga uma cópia para o final da fila
+            cards.push(cardToRepeat);
+            
+            // Feedback visual para o usuário entender por que o contador aumentou
+            showFeedback("Card re-agendado para o fim da sessão! ↺", colorHex);
+        }
       } else if (rating === 'hard') {
         // Multiplicador 1.2 (Padrão)
         newInterval = state.interval === 0 ? 1 : Math.round(state.interval * 1.2);

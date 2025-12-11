@@ -1750,11 +1750,11 @@ body {
       <form id="loginForm" class="login-form">
         <div class="form-group">
           <label for="loginEmail">Email:</label>
-          <input type="email" id="loginEmail" required>
+          <input type="email" id="loginEmail" value="@teste" readonly style="background-color: #333; color: #aaa; cursor: not-allowed;">
         </div>
         <div class="form-group">
           <label for="loginPassword">Senha:</label>
-          <input type="password" id="loginPassword" required>
+          <input type="password" id="loginPassword" value="10" readonly style="background-color: #333; color: #aaa; cursor: not-allowed;">
         </div>
         <button type="submit" class="login-button" id="loginSubmitBtn">
           <span id="loginBtnText">Acessar</span>
@@ -4024,7 +4024,12 @@ function changeTextColor(color) {
             populateVoiceList();
         };
 
-        window.speechSynthesis.speak(utterance);
+        // --- CORREÇÃO DE CORTE DE ÁUDIO ---
+        // Adiciona um pequeno atraso (100ms) para garantir que o navegador 
+        // limpou o buffer de áudio anterior antes de começar o próximo.
+        setTimeout(() => {
+            window.speechSynthesis.speak(utterance);
+        }, 100);
     }
 
     // Inicialização segura
@@ -5410,6 +5415,7 @@ function startCustomStudy() {
             menu.classList.remove('show-menu');
         }
     });
+	
   </script>
 </body>
 </html>

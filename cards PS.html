@@ -5012,25 +5012,30 @@ function startCustomStudy() {
         const realIndex = initialCards.indexOf(cards[currentCard]);
         if (realIndex !== -1) checkLeech(realIndex);
         
-        // 2. Define o agendamento no banco de dados (Segurança para o futuro)
+        // 2. Banco de Dados: Agenda para "Agora" (Reset)
         newInterval = 0; 
         newEase = Math.max(1.3, newEase - 0.2);
         nextReviewDate.setMinutes(nextReviewDate.getMinutes() + 10); 
 
-        // 3. ESTRATÉGIA DE RETORNO (FILA DINÂMICA)
-        // Se o usuário não sabe, ele DEVE ver de novo antes de sair,
-        // não importa se faltam 2 minutos ou 10.
-        
-        // Pega o card atual
+        // 3. ESTRATÉGIA HÍBRIDA (Inteligente)
         const cardToRepeat = cards[currentCard];
         
-        // Verifica se ele já não é o último (para não duplicar desnecessariamente se só sobrar 1)
-        if (cards.length > 1) {
-            // Joga uma cópia para o final da fila
+        // CÁLCULO: Queremos rever em 10 minutos. 
+        // Se levamos 30s por card, precisamos pular 20 cards.
+        const offset = 20; 
+        const targetIndex = currentCard + 1 + offset;
+
+        // CENÁRIO A: A fila é longa (temos mais de 20 cards pela frente)
+        // Inserimos o card "furando a fila" na posição 20.
+        if (targetIndex < cards.length) {
+            cards.splice(targetIndex, 0, cardToRepeat);
+            showFeedback("↺ Reagendado para daqui a ~10 min", colorHex);
+        } 
+        // CENÁRIO B: A fila é curta (acaba antes de 10 min)
+        // Jogamos para o final, senão perderíamos a revisão.
+        else if (cards.length > 1) { 
             cards.push(cardToRepeat);
-            
-            // Feedback visual para o usuário entender por que o contador aumentou
-            showFeedback("Card re-agendado para o fim da sessão! ↺", colorHex);
+            showFeedback("↺ Reagendado para o FINAL da fila", colorHex);
         }
       } else if (rating === 'hard') {
         // Multiplicador 1.2 (Padrão)
@@ -5405,7 +5410,6 @@ function startCustomStudy() {
             menu.classList.remove('show-menu');
         }
     });
-	
   </script>
 </body>
 </html>

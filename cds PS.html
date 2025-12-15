@@ -6,7 +6,7 @@
   <title>Chico Concursos - Flashcards com Progresso</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#121212"">
   <link rel="apple-touch-icon" href="https://img.icons8.com/color/96/books.png"> 
 <link rel="icon" type="image/png" href="https://img.icons8.com/color/96/books.png">
 <!-- NOVA FONTE ROBOTO -->
@@ -38,7 +38,7 @@ button:active, .menu-item-row:active {
 }
 
 body {
-  background-color: black;
+  background-color: #121212;
   color: #FFD700;
   font-family: 'Roboto', sans-serif; /* Fonte Atualizada */
   text-align: center;
@@ -48,7 +48,7 @@ body {
       display: flex;
       justify-content: center;        /* ← CENTRALIZADO */
       align-items: center;
-      background-color: #111;
+      background-color: #1e1e1e;
       padding: 5px 10px;              /* ← Aumentei levemente o padding vertical */
       flex-wrap: wrap;                /* ← ALTERADO: Agora quebra linha igual a base */
       overflow: visible;              /* ← ALTERADO: Permite que o tooltip saia da caixa */
@@ -185,25 +185,29 @@ body {
     .tooltip.show-tooltip::after {
         display: block;
     }
-    #card-container {
+   #card-container {
       position: relative;
       background-color: white;
       color: black;
-      width: 98%;
-      height: 75vh;
-      margin: 0px auto;
+      
+      /* --- AJUSTE FINAL PC: LARGURA TOTAL / ALTURA TRAVADA --- */
+      width: 98%;             /* VOLTOU: Ocupa quase toda a largura da tela */
+      max-width: none;        /* VOLTOU: Sem limite de largura */
+      
+      height: 325px;          /* MANTIDO: Altura fixa para não ficar gigante verticalmente */
+      max-height: 85vh;       /* Segurança para telas de notebooks pequenos */
+      margin: 0px auto;      /* Centralizado */
+      
       padding: 40px 10px;
       border-radius: 10px;
       box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
       display: flex;
       justify-content: center;
       align-items: center;
-      overflow-y: auto;
+      overflow-y: auto;       /* Cria barra de rolagem se o texto for maior que 600px */
       overflow-x: hidden;
       white-space: pre-wrap;
-	  /* --- LINHA NOVA (Adicione isto) --- */
       overscroll-behavior: contain; 
-      /* Isso impede que a rolagem passe para a página de fundo */
     }
     #flashcard-content {
       text-align: center;
@@ -539,10 +543,15 @@ body {
       width: 100%;
       height: 100%;
       background-color: rgba(0,0,0,0.9);
-      z-index: 9999;
+      /* Z-index MÁXIMO: Garante que o login cubra qualquer botão do sistema */
+      z-index: 2147483647 !important; 
       display: flex;
       justify-content: center;
-      align-items: center;
+      
+      /* ALTERADO: Alinha no topo em vez do centro */
+      align-items: flex-start; 
+      /* ADICIONADO: Empurra a caixa 100px para baixo para não colar no teto */
+      padding-top: 100px; 
     }
     .login-container {
       background-color: #111;
@@ -796,25 +805,38 @@ body {
 	    /* Restaurar fundo preto nos menus de cor */
     #cardColor,
     #textColor {
-      background-color: #000 !important;
+      background-color: #121212 !important;
       color: white !important;
       border: 1px solid #555 !important;
       padding: 2px 4px !important;
     }
 	/* Estilos para o novo Modal de Configurações */
-    #settingsModal {
+    /* === REGRA MESTRA: CORREÇÃO DE TODOS OS MODAIS (POSIÇÃO E VISIBILIDADE) === */
+    /* Aplica a correção ao Configurações, Ajuda, Manual, Stats, Filtro, Reporte, etc. */
+    #settingsModal, #helpModal, #manualModal, #statsModal, #filterModal, #reportModal, #handsFreeModal, #evalModal {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       background: rgba(0, 0, 0, 0.9);
-      z-index: 9999;
+      
+      /* CORREÇÃO 1: Z-Index MÁXIMO para garantir que o Configurações apareça na frente do Menu */
+      z-index: 2147483647 !important; 
+      
       display: flex;
       justify-content: center;
-      align-items: center;
+      
+      /* CORREÇÃO 2: Alinha tudo no TOPO (igual ao Login) para não cortar na tela do Google Sites */
+      align-items: flex-start !important; 
+      padding-top: 80px !important;       /* Respiro do topo */
+      padding-bottom: 50px !important;    /* Respiro do fundo */
+      
       backdrop-filter: blur(5px);
       -webkit-backdrop-filter: blur(5px);
+      
+      /* Permite rolar se o conteúdo do modal for muito grande */
+      overflow-y: auto !important; 
     }
     #settingsModalContent {
       background: #222;
@@ -925,42 +947,225 @@ body {
       font-weight: bold;
       color: gold;
     }
-	/* --- REGRAS EXCLUSIVAS PARA CELULAR (OTIMIZADO) --- */
+	/* --- REGRAS GERAIS (PC) --- */
+    /* Esconde os botões exclusivos de celular quando estiver no PC */
+    /* Botão MOSTRAR RESPOSTA (Ajustado para não bloquear o Login) */
+      #mobileAnswerBtn {
+        /* Removemos o !important do display para o JS poder esconder no login */
+        display: none; 
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 65px;
+        padding-bottom: max(10px, env(safe-area-inset-bottom)); 
+        padding-top: 15px;
+        background-color: #222 !important; 
+        color: #FFD700 !important;        
+        font-size: 1.3em !important;
+        font-weight: bold;
+        border: none !important;
+        border-top: 2px solid #FFD700 !important;
+        /* Z-index REDUZIDO: Alto o bastante para o card, mas menor que o Login */
+        z-index: 9000 !important; 
+        cursor: pointer;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+      }
+
+    /* --- REGRAS EXCLUSIVAS PARA CELULAR (LAYOUT HÍBRIDO V8) --- */
     @media (max-width: 768px) {
       
-      /* 1. Container do Card: Altura reduzida para evitar rolagem dupla */
+      /* === 1. TROCA INTELIGENTE DO TOPO === */
+      /* Esconde o Relógio no celular */
+      #desktopTimer {
+          display: none !important;
+      }
+      /* Mostra o Botão de Voz no celular (no lugar do relógio) */
+      #mobileTopTTS {
+          display: inline-block !important;
+          color: #FFD700 !important; /* Garante que o ícone fique dourado */
+      }
+
+      /* === 2. VISUAL "TELA CHEIA" === */
+      /* === 2. VISUAL "TELA CHEIA" (CORRIGIDO PARA ROLAGEM) === */
       #card-container {
-        height: 50vh; 
-        width: 96%;
-        margin-top: 5px;
+        width: 100% !important;
+        /* Define altura MÍNIMA, mas deixa crescer se o texto for grande */
+        min-height: calc(100vh - 120px) !important; 
+        height: auto !important; 
+        
+        margin: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background-color: black; 
+        border-bottom: 1px solid #333;
+        
+        display: flex;
+        align-items: center; /* Centraliza verticalmente se o texto for pequeno */
+        
+        /* IMPORTANTE: Remove a rolagem interna e deixa a página rolar */
+        overflow: visible !important; 
       }
 
-      /* 2. Correção Crítica do Login: Garante que o teclado não cubra o botão */
+      /* Garante que o fundo da página inteira seja preto no celular */
+      body {
+        background-color: #121212 !important;
+        min-height: 100vh;
+      }
+
+      #flashcard-content {
+        padding: 20px 15px 100px 15px !important; /* Padding extra embaixo p/ não bater no botão */
+        font-size: 1.5em; 
+        color: #e0e0e0; 
+        line-height: 1.6;
+        font-weight: 500;
+        
+        /* Solta o conteúdo para ocupar o espaço necessário */
+        max-height: none !important; 
+        overflow: visible !important;
+      }
+      
+      #flashcard-content img {
+        max-height: 50vh; /* Permite imagens maiores */
+        width: auto;
+        max-width: 100%;
+      }
+      
+      #flashcard-content img {
+        max-height: 40vh;
+        width: auto;
+      }
+
+      /* === 3. LIMPEZA DA BARRA SUPERIOR === */
+      .top-bar {
+        justify-content: space-between !important;
+        padding: 10px 15px !important;
+        background-color: black !important;
+        border-bottom: 1px solid #333;
+      }
+      
+      /* Esconde ícones desnecessários, mas MANTÉM o nosso novo #mobileTopTTS */
+      .top-bar #filterBtn, 
+      .top-bar #streakDisplay,
+      .top-bar button[onclick="toggleStatsModal()"],
+      .top-bar button[onclick="openFilterModal()"] {
+         display: none !important;
+      }
+      
+      .menu-item-label {
+          display: inline-block !important;
+          color: #ddd !important;
+          font-size: 1rem !important;
+          opacity: 1 !important;
+      }
+      
+      #syncIndicator { display: inline-block !important; }
+
+      /* === 4. RODAPÉ E BOTÕES === */
+      .bottom-bar { 
+        display: block !important; 
+        height: 0 !important; 
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important; 
+        border: none !important;
+      }
+
+      .bottom-bar > button, 
+      .bottom-bar > input, 
+      .bottom-bar > span,
+      .bottom-bar > div:not(#srsButtons) { 
+         display: none !important;
+      }
+
+      /* Botão MOSTRAR RESPOSTA */
+      #mobileAnswerBtn {
+        /* Reativamos o display block para celular */
+        display: block !important; 
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 65px;
+        padding-bottom: max(10px, env(safe-area-inset-bottom)); 
+        padding-top: 15px;
+        background-color: #222 !important; 
+        color: #FFD700 !important;        
+        font-size: 1.3em !important;
+        font-weight: bold;
+        border: none !important;
+        border-top: 2px solid #FFD700 !important;
+        z-index: 2147483647 !important;
+        cursor: pointer;
+      }
+
+      /* Barra SRS */
+      #srsButtons {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 65px;
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+        background-color: #000 !important;
+        z-index: 2147483647 !important;
+        padding: 0 !important;
+        gap: 0 !important;
+        border-top: 1px solid #333;
+        /* Display controlado pelo JS */
+      }
+
+      #srsButtons button.accuracy-button {
+        flex: 1 !important;
+        height: 70px !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        font-size: 0.85em !important;
+        font-weight: bold;
+        border: none !important;
+        background-color: transparent !important;
+      }
+
+      #btnAgain, #btnDontKnow { background: #2b1515 !important; color: #ff5555 !important; border-top: 3px solid #ff5555 !important; }
+      #btnHard { background: #2b2515 !important; color: #ffa500 !important; border-top: 3px solid #ffa500 !important; }
+      #btnGood { background: #152b15 !important; color: #90ee90 !important; border-top: 3px solid #90ee90 !important; }
+      #btnEasy { background: #152b2b !important; color: #00ff00 !important; border-top: 3px solid #00ff00 !important; }
+      
+      /* === AJUSTE CRÍTICO DE LOGIN MOBILE === */
+      /* === AJUSTE CRÍTICO DE LOGIN MOBILE (CORREÇÃO DO LOOP) === */
       #loginModal {
-        align-items: flex-start !important; /* Cola no topo */
-        overflow-y: auto !important;        /* Permite rolar se o teclado subir */
-        padding-top: 40px;                  /* Espaço seguro do topo */
+        align-items: flex-start !important;
+        padding-top: 20px !important;
+        padding-bottom: 20px !important;
+        overflow-y: auto !important;
+        /* REMOVIDO O !important DAQUI PARA O JS PODER FECHAR A JANELA */
+        display: flex; 
+        z-index: 2147483647 !important;
       }
       
-      .login-container {
-        margin: 0 auto 80px auto; /* Margem inferior grande para o teclado */
-        width: 92%;
-        padding: 20px;
+      .login-container { 
+        margin: 0 auto 50px auto !important; /* Centraliza e dá espaço no fundo para rolar */
+        width: 90% !important;               /* Largura segura */
+        padding: 15px !important;            /* Compacta o conteúdo interno */
+        max-width: 400px !important;         /* Evita que fique largo demais em tablets */
+        position: relative !important;       /* Garante que o z-index funcione */
+        background-color: #111 !important;   /* Fundo sólido para cobrir o que está atrás */
+        box-shadow: 0 0 50px rgba(0,0,0,1) !important; /* Sombra forte para destacar */
       }
 
-      /* 3. Otimização dos Botões da Barra Inferior (Para não quebrar linha) */
-      .bottom-bar {
-        gap: 5px; /* Menos espaço entre botões */
+      /* Compacta os campos de input para caber mais na tela */
+      .login-container .form-group {
+        margin-bottom: 10px !important;
       }
-      .bottom-bar button {
-        font-size: 1.1em; /* Botões levemente menores */
+      .login-container input {
+        padding: 8px !important;
       }
-      
-      /* 4. Botões SRS (Errei/Bom/Fácil) mais compactos no celular */
-      .accuracy-button {
-        padding: 0 5px !important;
-        font-size: 0.9em !important;
-        min-width: 55px !important;
+      .login-container h2 {
+        margin-bottom: 15px !important;
+        font-size: 1.5em !important;
       }
     }
 	/* --- ESTILO DAS CAIXAS DE SELEÇÃO (OPTION CARDS) --- */
@@ -1294,9 +1499,65 @@ body {
       object-fit: contain;
       animation: popIn 0.3s ease;
     }
+	/* === CORREÇÃO DE ZOOM NO PC (MATA O MODO MOBILE SE TIVER MOUSE) === */
+    /* Se o dispositivo tem cursor (mouse), forçamos o visual de PC */
+    @media (hover: hover) {
+      /* 1. Esconde o botão gigante de celular */
+      #mobileAnswerBtn { display: none !important; }
+
+      /* 2. Restaura a barra de botões do PC */
+      .bottom-bar {
+        display: flex !important;
+        height: auto !important;
+        padding: 0 !important;
+        margin: 0px 0 !important;
+        border: none !important;
+      }
+
+      /* 3. Garante que os botões da barra inferior apareçam */
+      .bottom-bar > button, 
+      .bottom-bar > input, 
+      .bottom-bar > span,
+      .bottom-bar > div:not(#srsButtons) {
+         display: inline-block !important;
+      }
+      .bottom-bar > div#autoAdvanceControls {
+         display: flex !important;
+      }
+
+      /* 4. Reseta a barra SRS para ficar dentro do card, não fixa no rodapé */
+      #srsButtons {
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        background-color: transparent !important;
+        border-top: none !important;
+        padding: 0 !important;
+      }
+      #srsButtons button.accuracy-button {
+        height: auto !important;
+        flex: none !important;
+        border-radius: 5px !important;
+      }
+
+      /* 5. Ajustes finos de layout */
+      #card-container {
+         width: 98% !important;
+         border-radius: 10px !important;
+         height: 325px !important; /* Mantém altura fixa do PC */
+         overflow-y: auto !important;
+      }
+      body {
+         overflow-y: hidden !important; /* O PC rola dentro do card, não a página */
+      }
+      .top-bar {
+         justify-content: center !important; /* Mantém o topo centralizado */
+      }
+    }
   </style>
 </head>
 <body>
+<button id="mobileAnswerBtn" onclick="flipCard()" style="display:none;">MOSTRAR RESPOSTA</button>
  <div class="top-bar">
     <!-- 1. BOTÃO MENU (HAMBÚRGUER) -->
     <div style="position: relative;">
@@ -1368,7 +1629,9 @@ body {
     <span id="streakDisplay" class="tooltip" data-tooltip="Ofensiva (Dias seguidos)" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="color: #ff4500; font-weight: bold; cursor:default;">🔥 0</span>
 	<span id="syncIndicator" class="tooltip" data-tooltip="Status: Sincronizado" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" style="color: #00ff00; font-weight: bold; cursor: help; margin-left: 8px; text-shadow: 0 0 5px #00ff00;">☁️</span>
  
-    <span class="tooltip" data-tooltip="Zerar Tempo" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="resetTimer()" style="cursor:pointer;">⏱️ <span id="timer">00:00</span></span>
+    <span id="desktopTimer" class="tooltip" data-tooltip="Zerar Tempo" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="resetTimer()" style="cursor:pointer;">⏱️ <span id="timer">00:00</span></span>
+
+    <button id="mobileTopTTS" class="tooltip" data-tooltip="Ler em Voz Alta" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleSpeech()"><i class="fas fa-volume-up"></i></button>
     
     <button class="tooltip" data-tooltip="Estatísticas" onmouseover="showTooltipOnHover(this)" onmouseleave="hideTooltipOnLeave(this)" onclick="toggleStatsModal()"><i class="fas fa-chart-line"></i></button>
     
@@ -1953,7 +2216,8 @@ let lastAutoAdvanceDelay = localStorage.getItem('lastAutoAdvanceDelay')
       document.getElementById('correctButton').classList.remove('correct');
       document.getElementById('incorrectButton').classList.remove('incorrect');
       document.getElementById('loginModal').style.display = 'flex';
-      
+      const mobileBtn = document.getElementById('mobileAnswerBtn');
+      if(mobileBtn) mobileBtn.style.display = 'none';
       initialCards = [];
       cards = [];
       currentCard = 0;
@@ -2534,7 +2798,30 @@ document.getElementById("focoSelect").style.display = "none";
       
       // Chama a função que criamos no Passo 3 para decidir o que mostrar
       updateEvalButtonsUI();
+// --- CONTROLE DE INTERFACE MOBILE (NOVO) ---
+      const isMobile = window.innerWidth <= 768;
+      const mobileBtn = document.getElementById('mobileAnswerBtn');
+      const srsDiv = document.getElementById('srsButtons');
 
+      if (isMobile) {
+          if (showingFront) {
+              // ESTADO 1: PERGUNTA (FRENTE)
+              // Mostra botão grande "Mostrar Resposta"
+              if(mobileBtn) mobileBtn.style.display = 'block';
+              // Esconde botões SRS
+              if(srsDiv) srsDiv.style.display = 'none';
+          } else {
+              // ESTADO 2: RESPOSTA (VERSO)
+              // Esconde botão grande
+              if(mobileBtn) mobileBtn.style.display = 'none';
+              // Mostra botões SRS (Se estiver no modo SRS ou Normal)
+              // Nota: Forçamos o display flex para garantir que apareça no mobile
+              if(srsDiv) srsDiv.style.display = 'flex';
+          }
+      } else {
+          // No PC, esconde o botão mobile para não atrapalhar
+          if(mobileBtn) mobileBtn.style.display = 'none';
+      }
       // Ajuste extra para o botão de embaralhar (Opcional: esconde no SRS visualmente)
       // Nota: A lógica principal de esconder botões já está dentro do updateEvalButtonsUI
       if (typeof isSRSMode !== 'undefined' && isSRSMode) {

@@ -1499,61 +1499,6 @@ body {
       object-fit: contain;
       animation: popIn 0.3s ease;
     }
-	/* === CORREÇÃO DE ZOOM NO PC (MATA O MODO MOBILE SE TIVER MOUSE) === */
-    /* Se o dispositivo tem cursor (mouse), forçamos o visual de PC */
-    @media (hover: hover) {
-      /* 1. Esconde o botão gigante de celular */
-      #mobileAnswerBtn { display: none !important; }
-
-      /* 2. Restaura a barra de botões do PC */
-      .bottom-bar {
-        display: flex !important;
-        height: auto !important;
-        padding: 0 !important;
-        margin: 0px 0 !important;
-        border: none !important;
-      }
-
-      /* 3. Garante que os botões da barra inferior apareçam */
-      .bottom-bar > button, 
-      .bottom-bar > input, 
-      .bottom-bar > span,
-      .bottom-bar > div:not(#srsButtons) {
-         display: inline-block !important;
-      }
-      .bottom-bar > div#autoAdvanceControls {
-         display: flex !important;
-      }
-
-      /* 4. Reseta a barra SRS para ficar dentro do card, não fixa no rodapé */
-      #srsButtons {
-        position: static !important;
-        width: auto !important;
-        height: auto !important;
-        background-color: transparent !important;
-        border-top: none !important;
-        padding: 0 !important;
-      }
-      #srsButtons button.accuracy-button {
-        height: auto !important;
-        flex: none !important;
-        border-radius: 5px !important;
-      }
-
-      /* 5. Ajustes finos de layout */
-      #card-container {
-         width: 98% !important;
-         border-radius: 10px !important;
-         height: 325px !important; /* Mantém altura fixa do PC */
-         overflow-y: auto !important;
-      }
-      body {
-         overflow-y: hidden !important; /* O PC rola dentro do card, não a página */
-      }
-      .top-bar {
-         justify-content: center !important; /* Mantém o topo centralizado */
-      }
-    }
   </style>
 </head>
 <body>
@@ -2017,7 +1962,7 @@ body {
         </div>
         <div class="form-group">
           <label for="loginPassword">Senha:</label>
-          <input type="password" id="loginPassword" value="10" readonly style="background-color: #333; color: #aaa; cursor: not-allowed;">
+           <input type="password" id="loginPassword" value="10" readonly style="background-color: #333; color: #aaa; cursor: not-allowed;">
         </div>
         <button type="submit" class="login-button" id="loginSubmitBtn">
           <span id="loginBtnText">Acessar</span>

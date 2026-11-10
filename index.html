@@ -4465,11 +4465,6 @@
         </div>
       </div>
       <div style="display: flex; align-items: center; gap: 8px;">
-        <button id="assistantWakeWordBtn" onclick="toggleWakeWordMode()" title="Ativar/Desativar Escuta Contínua (Fale: 'Chico, ...')"
-          style="background: #222; border: 1px solid #444; color: #FFD700; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.82em; font-weight: bold; display: inline-flex; align-items: center; gap: 6px;">
-          <i class="fas fa-assistive-listening-systems" id="assistantWakeWordIcon"></i>
-          <span id="assistantWakeWordLabel">Ouvir "Chico": OFF</span>
-        </button>
         <button id="assistantMuteBtn" onclick="toggleAssistantVoice()" title="Ativar/Desativar resposta por voz"
           style="background: #222; border: 1px solid #444; color: #FFD700; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.9em;">
           <i class="fas fa-volume-up" id="assistantMuteIcon"></i>
@@ -4494,12 +4489,8 @@
     <div id="chicoAssistantHistory" class="ai-chat-history"></div>
 
     <div class="ai-modal-footer" style="flex-shrink: 0;">
-      <button id="assistantMicBtn" onclick="toggleAssistantMic()" title="Falar comando pelo microfone"
-        style="background: #222; color: #FFD700; border: 1px solid #555; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
-        <i class="fas fa-microphone" id="assistantMicIcon"></i>
-      </button>
       <input type="text" id="chicoAssistantInput" class="ai-input-field"
-        placeholder="Ex: 'explica este card', 'ir para card 25', 'modo escuro', 'buscar pena'..."
+        placeholder="Digite um comando (ex: 'card 25', 'modo escuro', 'buscar pena') ou uma dúvida..."
         onkeydown="if(event.key==='Enter'){ event.stopPropagation(); sendChicoAssistantMessage(); }">
       <button class="ai-send-btn" onclick="sendChicoAssistantMessage()" title="Enviar">
         <i class="fas fa-paper-plane"></i>
@@ -4545,25 +4536,24 @@
       if (hud) hud.style.display = 'none';
     }
 
-    // 🚀 PRÉ-AQUECIMENTO SILENCIOSO DO PIPER NO BOOT DA PÁGINA
+    // 🚀 PRÉ-AQUECIMENTO SILENCIOSO DO PIPER NO BOOT DA PÁGINA (ATIVO POR PADRÃO)
     async function autoWarmupPiperFromCache() {
       try {
+        // Só não carrega o Piper se o aluno escolheu explicitamente desativá-lo (ex: no Edge)
+        if (localStorage.getItem('chicoUsePiper') === 'false') {
+          updateAssistantVoiceBadge();
+          return false;
+        }
+
         if (typeof piperReady !== 'undefined' && piperReady) {
           if (typeof getOrCreatePiperWorker === 'function') getOrCreatePiperWorker();
           updateAssistantVoiceBadge();
           return true;
         }
 
-        let hasCachedModel = (localStorage.getItem('chicoUsePiper') === 'true');
-        if (!hasCachedModel && 'caches' in window) {
-          const cache = await caches.open('piper-voices');
-          const keys = await cache.keys();
-          if (keys && keys.length > 0) hasCachedModel = true;
-        }
-
-        if (hasCachedModel && typeof initPiperReal === 'function') {
+        if (typeof initPiperReal === 'function') {
           if (!piperLoading) {
-            await initPiperReal();
+            await initPiperReal(true); // Carrega silenciosamente em segundo plano
           } else {
             for (let i = 0; i < 40; i++) {
               if (piperReady || !piperLoading) break;
@@ -4594,21 +4584,14 @@
       const history = document.getElementById('chicoAssistantHistory');
       modal.style.display = 'flex';
 
-      if (typeof piperReady !== 'undefined' && !piperReady) {
-        await autoWarmupPiperFromCache();
-        if (!piperReady && !piperLoading && typeof initPiperReal === 'function') {
-          initPiperReal().then(() => {
-            if (typeof getOrCreatePiperWorker === 'function') getOrCreatePiperWorker();
-            updateAssistantVoiceBadge();
-          });
-        }
+      if (typeof piperReady !== 'undefined' && !piperReady && localStorage.getItem('chicoUsePiper') !== 'false') {
+        autoWarmupPiperFromCache();
       }
 
       updateAssistantVoiceBadge();
 
-      // Mensagem de abertura concisa e SEM fala automática (para não bloquear o microfone!)
       if (history.innerHTML.trim() === '') {
-        const welcome = "Olá! Estou pronto. Fale ou digite comandos como 'card 2', 'virar', 'próximo', 'letra B', 'anotar: ...', ou segure a tecla [Espaço] fora desta janela para falar rápido.";
+        const welcome = "Olá! Use os botões rápidos acima ou digite comandos como 'card 2', 'virar', 'próximo', 'letra B', 'modo escuro', 'anotar: ...' ou qualquer dúvida sobre o card atual.";
         appendAssistantMessage('assistant', welcome);
       }
 
@@ -4621,7 +4604,6 @@
       if (!keepVoice) {
         stopAssistantSpeech();
       }
-      stopAssistantMicRecording();
       document.getElementById('chicoAssistantModal').style.display = 'none';
     }
 
@@ -4634,16 +4616,16 @@
         return;
       }
       if (!isAssistantVoiceEnabled) {
-        badge.textContent = "🔇 Voz silenciada • Segure [Espaço] para falar";
+        badge.textContent = "🔇 Resposta por voz silenciada";
         badge.style.color = "#888";
-      } else if (typeof piperReady !== 'undefined' && piperReady) {
-        badge.textContent = "🟢 Voz Neural Piper Ativa • Segure [Espaço] para falar rápido";
+      } else if (typeof piperReady !== 'undefined' && piperReady && usePiperEngine) {
+        badge.textContent = "🟢 Voz Neural Piper Ativa";
         badge.style.color = "#4CAF50";
       } else if (typeof piperLoading !== 'undefined' && piperLoading) {
-        badge.textContent = "⏳ Preparando Voz Piper...";
+        badge.textContent = "⏳ Preparando Voz Neural Piper...";
         badge.style.color = "#FFD700";
       } else {
-        badge.textContent = "🗣️ Voz Ativa • Segure [Espaço] para falar rápido";
+        badge.textContent = "🗣️ Voz do Navegador Ativa";
         badge.style.color = "#FFD700";
       }
     }
@@ -6094,47 +6076,6 @@
      openGoogleSitesMicBridge();
    }
  }
-
- // ═══════════════════════════════════════════════════════════════════
- // ATALHO WALKIE-TALKIE: SEGURAR [BARRA DE ESPAÇO] PARA FALAR RÁPIDO
- // ═══════════════════════════════════════════════════════════════════
- let spaceHoldTimer = null;
- let isSpacePushToTalkActive = false;
-
- window.addEventListener('keydown', (e) => {
-   if (e.key !== ' ' || e.repeat) return;
-   const activeEl = document.activeElement;
-   if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT')) return;
-   if (!isAuthenticated) return;
-
-   if (!spaceHoldTimer && !isSpacePushToTalkActive) {
-     spaceHoldTimer = setTimeout(() => {
-       isSpacePushToTalkActive = true;
-       if (isUsingFallbackVAD && isWakeWordActive) {
-         showVoiceHud("🎙️ [Walkie-Talkie] Fale e solte [Espaço]...", "#00FF00", 0);
-       } else if (!isAssistantListening) {
-         showVoiceHud("🎙️ [Walkie-Talkie] Fale e solte [Espaço]...", "#00FF00", 0);
-         toggleAssistantMic();
-       }
-     }, 250);
-   }
- });
-
- window.addEventListener('keyup', (e) => {
-   if (e.key !== ' ') return;
-   if (spaceHoldTimer) {
-     clearTimeout(spaceHoldTimer);
-     spaceHoldTimer = null;
-   }
-   if (isSpacePushToTalkActive) {
-     isSpacePushToTalkActive = false;
-     if (isUsingFallbackVAD && typeof forceFinalizeFirefoxSpeech === 'function') {
-       forceFinalizeFirefoxSpeech();
-     } else if (isAssistantListening || (typeof mediaRecorderInstance !== 'undefined' && mediaRecorderInstance && mediaRecorderInstance.state === 'recording')) {
-       stopAssistantMicRecording();
-     }
-   }
- });
 </script>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -8743,13 +8684,14 @@
     }
 
     // --- ATIVAÇÃO REAL DO PIPER (CONECTADO DIRETO AO SEU VERCEL) ---
-    async function initPiperReal() {
+    async function initPiperReal(silent = false) {
       if (piperLoading || piperReady) return;
       piperLoading = true;
       updateVoiceEngineUI('loading');
+      if (typeof updateAssistantVoiceBadge === 'function') updateAssistantVoiceBadge();
 
       try {
-        showFeedback("Importando motor Piper... ⏳", "gold");
+        if (!silent) showFeedback("Importando motor Piper... ⏳", "gold");
         // Versão estável travada para evitar quebras por atualizações externas
         piperModule = await import("https://cdn.jsdelivr.net/npm/@mintplex-labs/piper-tts-web@1.0.3/+esm");
 
@@ -8758,7 +8700,7 @@
 
         const stored = await piperModule.stored();
         if (!stored.includes(voiceId)) {
-          showFeedback("Conectando ao seu Vercel... ⏳", "gold");
+          if (!silent) showFeedback("Conectando ao seu Vercel... ⏳", "gold");
 
           const cache = await caches.open("piper-voices");
 
@@ -8783,7 +8725,7 @@
             if (done) break;
             chunks.push(value);
             loadedBytes += value.length;
-            if (totalBytes > 0) {
+            if (!silent && totalBytes > 0) {
               const pct = Math.round((loadedBytes / totalBytes) * 100);
               showFeedback(`Baixando voz neural... ${pct}%`, "gold");
             }
@@ -8815,25 +8757,28 @@
         piperLoading = false;
         usePiperEngine = true;
         localStorage.setItem('chicoUsePiper', 'true');
-        showFeedback("✅ Voz Neural Piper ativada!", "#00ff00");
+        if (typeof getOrCreatePiperWorker === 'function') getOrCreatePiperWorker();
+        if (!silent) showFeedback("✅ Voz Neural Piper ativada!", "#00ff00");
         updateVoiceEngineUI('piper');
+        if (typeof updateAssistantVoiceBadge === 'function') updateAssistantVoiceBadge();
       } catch (e) {
         console.error("❌ Piper erro:", e);
         piperLoading = false;
-        // Limpa cache incompleto se houver falha durante o download
         try { await caches.delete("piper-voices"); } catch (err) {}
-        showFeedback("Erro ao carregar Piper. Usando voz padrão.", "#ff5252");
+        if (!silent) showFeedback("Erro ao carregar Piper. Usando voz padrão.", "#ff5252");
         updateVoiceEngineUI(hasNeuralVoices() ? 'neural' : 'basic');
+        if (typeof updateAssistantVoiceBadge === 'function') updateAssistantVoiceBadge();
       }
     }
 
-    // --- DESATIVAR PIPER ---
+    // --- DESATIVAR PIPER (Salva 'false' para manter a escolha do aluno, ex: no Edge) ---
     function disablePiper() {
       usePiperEngine = false;
       piperReady = false;
-      localStorage.removeItem('chicoUsePiper');
+      localStorage.setItem('chicoUsePiper', 'false');
       stopSpeech();
       updateVoiceEngineUI(hasNeuralVoices() ? 'neural' : 'basic');
+      if (typeof updateAssistantVoiceBadge === 'function') updateAssistantVoiceBadge();
       showFeedback("Piper desativado. Usando voz nativa.", "white");
     }
 
@@ -9413,19 +9358,14 @@
           console.log("Melhores vozes:", ptVoices.slice(0, 3).map(v => v.name).join(', '));
         }
 
-        // --- VERIFICAÇÃO HÍBRIDA: Piper necessário? ---
-        if (!piperCheckDone && ptVoices.length > 0) {
+        // --- MOTOR PIPER ATIVO POR PADRÃO (Exceto se desativado manualmente pelo aluno) ---
+        if (!piperCheckDone) {
           piperCheckDone = true;
-          if (hasNeuralVoices()) {
-            updateVoiceEngineUI('neural');
-            console.log("🟢 Motor nativo com vozes neurais — Piper desnecessário");
+          if (localStorage.getItem('chicoUsePiper') === 'false') {
+            updateVoiceEngineUI(hasNeuralVoices() ? 'neural' : 'basic');
+            console.log("🗣️ Motor nativo selecionado pelo usuário (Piper desativado manualmente)");
           } else {
-            updateVoiceEngineUI('basic');
-            console.log("🟡 Sem vozes neurais — Piper disponível como opção");
-            // Se já foi ativado antes, recarrega automaticamente
-            if (localStorage.getItem('chicoUsePiper') === 'true') {
-              initPiperReal();
-            }
+            initPiperReal(true);
           }
         }
 

@@ -4593,9 +4593,6 @@
       const history = document.getElementById('chicoAssistantHistory');
       modal.style.display = 'flex';
 
-      const input = document.getElementById('chicoAssistantInput');
-      if (input) setTimeout(() => input.focus(), 100);
-
       if (typeof piperReady !== 'undefined' && !piperReady) {
         await autoWarmupPiperFromCache();
         if (!piperReady && !piperLoading && typeof initPiperReal === 'function') {
@@ -4613,6 +4610,10 @@
         const welcome = "Olá! Estou pronto. Fale ou digite comandos como 'card 2', 'virar', 'próximo', 'letra B', 'anotar: ...', ou segure a tecla [Espaço] fora desta janela para falar rápido.";
         appendAssistantMessage('assistant', welcome);
       }
+
+      // Garante que a janela permaneça focada no TOPO ao abrir
+      if (history) history.scrollTop = 0;
+      modal.scrollTop = 0;
     }
 
     function closeChicoAssistant(keepVoice = false) {
@@ -5194,43 +5195,10 @@
    return false;
  }
 
- // Abre a Mini-Janela de Microfone fora do iframe do Google Sites
+ // Mantém tudo na mesma tela sem abrir nova aba/janela quando o iframe do Google Sites bloquear o microfone
  function openGoogleSitesMicBridge() {
-   if (popupMicWindow && !popupMicWindow.closed) {
-     popupMicWindow.focus();
-     return;
-   }
-
-   const isGoogleUserContent = window.location.hostname.includes('googleusercontent.com') || window.location.protocol === 'blob:';
-
-   if (!isGoogleUserContent) {
-     // Caso 1: Incorporado via URL do GitHub Pages
-     const currentUrl = new URL(window.location.href);
-     currentUrl.searchParams.set('chicoMicBridge', '1');
-     popupMicWindow = window.open(
-       currentUrl.toString(),
-       'ChicoMicBridgeWindow',
-       'width=360,height=260,menubar=no,toolbar=no,location=no,status=no,resizable=yes'
-     );
-   } else {
-     // Caso 2: Incorporado via Código HTML direto no Google Sites
-     popupMicWindow = window.open(
-       'about:blank',
-       'ChicoMicBridgeWindow',
-       'width=360,height=260,menubar=no,toolbar=no,location=no,status=no,resizable=yes'
-     );
-     if (popupMicWindow) {
-       popupMicWindow.document.open();
-       popupMicWindow.document.write(getStandaloneBridgeHTML());
-       popupMicWindow.document.close();
-     }
-   }
-
-   if (!popupMicWindow) {
-     showToast("Permita pop-ups neste site para abrir o Microfone Externo do Google Sites.", "warning", 5000);
-   } else {
-     showToast("🎙️ Mini-Microfone aberto! Permita o microfone na janelinha e fale seus comandos.", "info", 5000);
-   }
+   hideVoiceHud();
+   showToast("O quadro do Google Sites bloqueou o acesso direto ao microfone neste navegador.", "warning", 4500);
  }
 
  function getStandaloneBridgeHTML() {

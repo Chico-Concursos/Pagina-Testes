@@ -3369,9 +3369,10 @@
   <!-- BARRA DE NAVEGAÇÃO MCQ (Anterior / Próximo) -->
   <div id="mcqNavBar">
     <button onclick="reviewAndRetreat()">◀</button>
-    <button onclick="reviewAndAdvance()">▶</button>
+   <button onclick="reviewAndAdvance()">▶</button>
   </div>
   <div class="top-bar" role="toolbar" aria-label="Barra de ferramentas principal">
+    <button id="topScrollAnchor" type="button" tabindex="-1" aria-hidden="true" style="position:absolute; top:0; left:0; width:1px; height:1px; opacity:0; pointer-events:none; border:none; padding:0; margin:0; outline:none;"></button>
     
     <!-- NOVO: BOTÃO OCULTAR / MOSTRAR MENUS (ESTILO GOOGLE PLANILHAS) -->
     <div class="menu-toggle-wrapper">
@@ -7194,12 +7195,28 @@
   <!-- MÓDULO 4: CARDS — EXIBIÇÃO, NAVEGAÇÃO E MCQ                   -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <script>
+    // Função que força o navegador e o Google Sites a subirem instantaneamente para o topo do Card
+    function scrollToCardTop() {
+      try {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        const anchor = document.getElementById('topScrollAnchor') || document.querySelector('.top-bar');
+        if (anchor) {
+          anchor.focus({ preventScroll: false });
+          anchor.scrollIntoView({ behavior: 'instant', block: 'start' });
+          setTimeout(() => {
+            if (document.activeElement === anchor) anchor.blur();
+          }, 30);
+        }
+      } catch (e) {}
+    }
+
     // Alteração: Aceita parâmetro para pular o salvamento automático
     function updateCard(skipAutoSave = false) {
       if (typeof handsFreeTimer !== 'undefined') clearTimeout(handsFreeTimer);
       stopSpeech();
       updateHighlightButtonHint();
       if (!requireAuth() || cards.length === 0 || isFinished) return;
+      if (!skipAutoSave) scrollToCardTop();
       const card = cards[currentCard];
       const contentElement = document.getElementById("flashcard-content");
 
@@ -9208,6 +9225,7 @@
 
     // --- FUNÇÃO APRIMORADA: SELEÇÃO AUTOMÁTICA DE VOZES NEURAIS ---
     function populateVoiceList(attempt = 0) {
+      if (typeof voicesLoaded !== 'undefined' && voicesLoaded && typeof attempt === 'number') return;
       try {
         const voiceSelectQ = document.getElementById('voiceSelectQuestion');
         const voiceSelectA = document.getElementById('voiceSelectAnswer');
@@ -9390,6 +9408,8 @@
 
         console.log(`✅ Vozes carregadas com sucesso. Total: ${ptVoices.length}`);
         if (ptVoices.length > 0) {
+          voicesLoaded = true;
+          if (window.voiceLoadInterval) clearInterval(window.voiceLoadInterval);
           console.log("Melhores vozes:", ptVoices.slice(0, 3).map(v => v.name).join(', '));
         }
 
@@ -11701,7 +11721,7 @@
     }
 
     // --- 3. EXIBE A MENSAGEM SE TIVERMOS UMA POSIÇÃO VÁLIDA ---
-    if (targetIndex !== null && targetIndex > 0) {
+    if (targetIndex !== null && targetIndex > 1) {
       if (targetIndex > cards.length) {
         isInitialPositionResolved = true; // Índice inválido: destrava para uso normal
         return;

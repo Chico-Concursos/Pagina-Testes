@@ -5022,11 +5022,6 @@
         stopWakeWordEngine();
         showToast("Escuta contínua desativada.", "info");
       } else {
-        // Se estiver dentro do iframe do Google Sites, abre a Mini-Janela Ponte no ato do clique (sem await antes!)
-        if (window.self !== window.top) {
-          openGoogleSitesMicBridge();
-          return;
-        }
         startWakeWordEngine();
       }
     }
@@ -5140,283 +5135,27 @@
       t = t.replace(/\b(escura|escuros)\b/g, 'escuro');
 
       // 3. Converte números falados por extenso ("dois" -> "2", "vinte e cinco" -> "25")
-   t = convertPortugueseWordsToNumbers(t);
-   return t;
- }
+      t = convertPortugueseWordsToNumbers(t);
+      return t;
+    }
 
- // ═══════════════════════════════════════════════════════════════════
- // PONTE DE MICROFONE PARA GOOGLE SITES (CONTORNA BLOQUEIO DE IFRAME)
- // ═══════════════════════════════════════════════════════════════════
- let popupMicWindow = null;
- const voiceBroadcastChannel = (typeof BroadcastChannel !== 'undefined')
-   ? new BroadcastChannel('chico_concursos_voice_bridge')
-   : null;
+    let popupMicWindow = null;
 
- function handleBridgeIncomingMessage(data) {
-   if (!data) return;
-   if (data.type === 'CHICO_VOICE_TRANSCRIPT' && data.text) {
-     const norm = normalizeWhisperTranscript(data.text);
-     console.log("📡 [Ponte Google Sites] Voz recebida:", data.text, "| Normalizado:", norm);
-     const modal = document.getElementById('chicoAssistantModal');
-     const isModalOpen = modal && modal.style.display === 'flex';
-     if (isModalOpen && !isWakeWordActive) {
-       const input = document.getElementById('chicoAssistantInput');
-       if (input) input.value = norm;
-       sendChicoAssistantMessage();
-     } else {
-       routeContinuousTranscript(norm);
-     }
-   } else if (data.type === 'CHICO_VOICE_STATUS') {
-     if (data.status === 'listening') {
-       isWakeWordActive = true;
-       updateWakeWordUI();
-       showVoiceHud("🎙️ Escuta Ativa (via Mini-Microfone)!", "#00FF00", 4000);
-     } else if (data.status === 'stopped') {
-       isWakeWordActive = false;
-       updateWakeWordUI();
-     } else if (data.status === 'hearing') {
-       showVoiceHud(`🎙️ "${data.partial || 'Ouvindo...'}"`, "#00FF00", 2000);
-     }
-   }
- }
+    // Detecta se o navegador é o Brave (que bloqueia servidores Google Speech por padrão)
+    async function detectIsBraveBrowser() {
+      try {
+        if (navigator.brave && typeof navigator.brave.isBrave === 'function') {
+          return await navigator.brave.isBrave();
+        }
+      } catch (e) {}
+      return false;
+    }
 
- if (voiceBroadcastChannel) {
-   voiceBroadcastChannel.onmessage = (ev) => handleBridgeIncomingMessage(ev.data);
- }
- window.addEventListener('message', (ev) => handleBridgeIncomingMessage(ev.data));
-
- // Detecta se o navegador é o Brave (que bloqueia servidores Google Speech por padrão)
- async function detectIsBraveBrowser() {
-   try {
-     if (navigator.brave && typeof navigator.brave.isBrave === 'function') {
-       return await navigator.brave.isBrave();
-     }
-   } catch (e) {}
-   return false;
- }
-
- // Mantém tudo na mesma tela sem abrir nova aba/janela quando o iframe do Google Sites bloquear o microfone
- function openGoogleSitesMicBridge() {
-   hideVoiceHud();
-   showToast("O quadro do Google Sites bloqueou o acesso direto ao microfone neste navegador.", "warning", 4500);
- }
-
- function getStandaloneBridgeHTML() {
-   return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Microfone Chico Concursos</title>
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-   </head><body style="margin:0;background:#111;color:#fff;font-family:Arial,sans-serif;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;border:2px solid #FFD700;box-sizing:border-box;">
-     <div style="color:#FFD700;font-weight:900;font-size:1.1em;margin-bottom:8px;"><i class="fas fa-headset"></i> MICROFONE CHICO CONCURSOS</div>
-     <div id="bStatus" style="font-size:0.88em;color:#FFD700;margin-bottom:12px;">⏳ Solicitando permissão do microfone...</div>
-     <div id="bHeard" style="background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:10px;width:90%;min-height:36px;font-size:0.85em;color:#ddd;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">Diga: "virar", "próximo", "card 2", "modo escuro"...</div>
-     <div style="font-size:0.72em;color:#888;">Deixe esta mini-janela aberta enquanto estuda no Google Sites.</div>
-     <script>
-       const bc = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('chico_concursos_voice_bridge') : null;
-       function sendMsg(p) {
-         if (bc) { try { bc.postMessage(p); } catch(e){} }
-         if (window.opener && !window.opener.closed) { try { window.opener.postMessage(p, '*'); } catch(e){} }
-       }
-       window.onbeforeunload = () => sendMsg({ type: 'CHICO_VOICE_STATUS', status: 'stopped' });
-       (${startBridgeWhisperLocal.toString()})(document.getElementById('bStatus'), document.getElementById('bHeard'), sendMsg);
-     <\/script>
-   </body></html>`;
- }
-
- // Se abriu via URL do GitHub Pages com ?chicoMicBridge=1, cria a camada receptora limpa por cima de tudo
- (function checkIfMicBridgePopup() {
-   const params = new URLSearchParams(window.location.search);
-   if (params.get('chicoMicBridge') !== '1') return;
-
-   window.addEventListener('DOMContentLoaded', async () => {
-     const loginMod = document.getElementById('loginModal');
-     if (loginMod) loginMod.style.display = 'none';
-
-     const overlay = document.createElement('div');
-     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#111;color:#fff;font-family:Roboto,sans-serif;z-index:9999999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;text-align:center;border:2px solid #FFD700;box-sizing:border-box;';
-     overlay.innerHTML = `
-       <div style="color:#FFD700; font-weight:900; font-size:1.15em; margin-bottom:6px;">
-         <i class="fas fa-headset"></i> MICROFONE CHICO CONCURSOS
-       </div>
-       <div id="bridgeStatus" style="font-size:0.88em; color:#00FF00; margin-bottom:12px;">
-         ⏳ Iniciando escuta...
-       </div>
-       <div id="bridgeHeard" style="background:#1e1e1e; border:1px solid #333; border-radius:8px; padding:8px 12px; width:90%; min-height:36px; font-size:0.85em; color:#ddd; display:flex; align-items:center; justify-content:center; margin-bottom:12px;">
-         Diga: "virar", "próximo", "card 2", "modo escuro"...
-       </div>
-       <div style="font-size:0.72em; color:#888;">
-         Mantenha esta janelinha aberta (pode deixá-la atrás da tela) enquanto estuda no Google Sites.
-       </div>
-     `;
-     document.body.appendChild(overlay);
-
-     const statusEl = document.getElementById('bridgeStatus');
-     const heardEl = document.getElementById('bridgeHeard');
-
-     function sendToMainFrame(payload) {
-       if (voiceBroadcastChannel) {
-         try { voiceBroadcastChannel.postMessage(payload); } catch (e) {}
-       }
-       if (window.opener && !window.opener.closed) {
-         try { window.opener.postMessage(payload, '*'); } catch (e) {}
-       }
-     }
-
-     const isBrave = await detectIsBraveBrowser();
-     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-     if (SpeechRec && !isBrave) {
-       const rec = new SpeechRec();
-       rec.lang = 'pt-BR';
-       rec.continuous = true;
-       rec.interimResults = true;
-
-       rec.onstart = () => {
-         statusEl.textContent = "🟢 Ouvindo continuamente! Pode falar.";
-         statusEl.style.color = "#00FF00";
-         sendToMainFrame({ type: 'CHICO_VOICE_STATUS', status: 'listening' });
-       };
-
-       rec.onresult = (ev) => {
-         const res = ev.results[ev.results.length - 1];
-         const txt = (res[0].transcript || '').trim();
-         if (!txt) return;
-         heardEl.textContent = `🎙️ "${txt}"`;
-         if (!res.isFinal) {
-           sendToMainFrame({ type: 'CHICO_VOICE_STATUS', status: 'hearing', partial: txt });
-         } else {
-           sendToMainFrame({ type: 'CHICO_VOICE_TRANSCRIPT', text: txt });
-         }
-       };
-
-       rec.onerror = (ev) => {
-         if (ev.error === 'network' || ev.error === 'service-not-allowed') {
-           rec.onend = null;
-           startBridgeWhisperLocal(statusEl, heardEl, sendToMainFrame);
-         }
-       };
-
-       rec.onend = () => {
-         try { rec.start(); } catch (e) {}
-       };
-
-       try { rec.start(); } catch (e) {
-         startBridgeWhisperLocal(statusEl, heardEl, sendToMainFrame);
-       }
-     } else {
-       startBridgeWhisperLocal(statusEl, heardEl, sendToMainFrame);
-     }
-
-     window.addEventListener('beforeunload', () => {
-       sendToMainFrame({ type: 'CHICO_VOICE_STATUS', status: 'stopped' });
-     });
-   });
- })();
-
- async function startBridgeWhisperLocal(statusEl, heardEl, sendToMainFrame) {
-   try {
-     statusEl.textContent = "⏳ Carregando Ouvido Neural Local...";
-     statusEl.style.color = "#FFD700";
-     const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-     env.allowLocalModels = false;
-     env.useBrowserCache = true;
-     const transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', { quantized: true });
-
-     const stream = await navigator.mediaDevices.getUserMedia({
-       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-     });
-     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-     if (audioCtx.state === 'suspended') await audioCtx.resume();
-     const nativeRate = audioCtx.sampleRate;
-     const source = audioCtx.createMediaStreamSource(stream);
-     const scriptNode = audioCtx.createScriptProcessor(4096, 1, 1);
-
-     const maxPreRoll = Math.ceil((0.75 * nativeRate) / 4096);
-     let preRoll = [];
-     let speechBuf = [];
-     let speaking = false;
-     let silenceCnt = 0;
-     let speechCnt = 0;
-     let busy = false;
-     let floor = 0.006;
-
-     statusEl.textContent = "🟢 Ouvido Neural Ativo! Pode falar.";
-     statusEl.style.color = "#00FF00";
-     sendToMainFrame({ type: 'CHICO_VOICE_STATUS', status: 'listening' });
-
-     scriptNode.onaudioprocess = (e) => {
-       if (busy) return;
-       const input = new Float32Array(e.inputBuffer.getChannelData(0));
-       let sum = 0;
-       for (let i = 0; i < input.length; i++) sum += input[i] * input[i];
-       const rms = Math.sqrt(sum / input.length);
-
-       if (!speaking && rms < floor * 1.4) {
-         floor = 0.95 * floor + 0.05 * Math.max(0.002, rms);
-       }
-       const thresh = Math.max(0.011, Math.min(0.038, floor * 2.4));
-
-       if (rms > thresh) {
-         silenceCnt = 0;
-         if (!speaking) {
-           speaking = true;
-           speechCnt = 0;
-           speechBuf = [...preRoll];
-           preRoll = [];
-           heardEl.textContent = "🎙️ Ouvindo sua voz...";
-           sendToMainFrame({ type: 'CHICO_VOICE_STATUS', status: 'hearing', partial: 'Ouvindo você...' });
-         }
-         speechBuf.push(input);
-         speechCnt += input.length;
-         if (speechCnt >= nativeRate * 4.0) finishChunk();
-       } else if (speaking) {
-         speechBuf.push(input);
-         silenceCnt += input.length;
-         if (silenceCnt >= nativeRate * 0.55) finishChunk();
-       } else {
-         preRoll.push(input);
-         if (preRoll.length > maxPreRoll) preRoll.shift();
-       }
-     };
-
-     async function finishChunk() {
-       speaking = false;
-       const bufs = speechBuf;
-       speechBuf = [];
-       silenceCnt = 0;
-       if (speechCnt < nativeRate * 0.35) return;
-
-       busy = true;
-       heardEl.textContent = "⚡ Transcrevendo...";
-       try {
-         const total = bufs.reduce((a, b) => a + b.length, 0);
-         const merged = new Float32Array(total);
-         let off = 0;
-         for (const b of bufs) { merged.set(b, off); off += b.length; }
-
-         const ratio = nativeRate / 16000;
-         const len16 = Math.round(merged.length / ratio);
-         const audio16 = new Float32Array(len16);
-         for (let i = 0; i < len16; i++) audio16[i] = merged[Math.min(merged.length - 1, Math.floor(i * ratio))];
-
-         const res = await transcriber(audio16, { language: 'portuguese', task: 'transcribe' });
-         const txt = (res && res.text) ? res.text.trim() : '';
-         if (txt) {
-           heardEl.textContent = `🗣️ "${txt}"`;
-           sendToMainFrame({ type: 'CHICO_VOICE_TRANSCRIPT', text: txt });
-         }
-       } catch (err) {
-         console.warn(err);
-       } finally {
-         busy = false;
-       }
-     }
-
-     source.connect(scriptNode);
-     scriptNode.connect(audioCtx.destination);
-   } catch (err) {
-     statusEl.textContent = "❌ Permissão de microfone negada.";
-     statusEl.style.color = "#ff4d4d";
-   }
- }
+    // Aviso interno na tela (nunca abre nova aba ou janela)
+    function openGoogleSitesMicBridge() {
+      hideVoiceHud();
+      showToast("Permissão de microfone bloqueada neste quadro. Verifique se a moldura possui allow='microphone *'.", "warning", 5000);
+    }
 
  async function startWakeWordEngine() {
    if (isAssistantListening) {

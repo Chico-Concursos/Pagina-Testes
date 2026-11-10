@@ -5021,6 +5021,11 @@
         stopWakeWordEngine();
         showToast("Escuta contínua desativada.", "info");
       } else {
+        // Se estiver dentro do iframe do Google Sites, abre a Mini-Janela Ponte no ato do clique (sem await antes!)
+        if (window.self !== window.top) {
+          openGoogleSitesMicBridge();
+          return;
+        }
         startWakeWordEngine();
       }
     }
